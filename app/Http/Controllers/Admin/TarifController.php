@@ -31,8 +31,10 @@ class TarifController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'jenis_kendaraan' => 'required|in:motor,mobil,lainnya',
+            'jenis_kendaraan' => 'required|string|max:50',
             'tarif_per_jam'   => 'required|numeric|min:100',
+            'tarif_maks_per_hari' => 'required|numeric|min:100',
+            'denda_per_jam' => 'required|numeric|min:0',
         ]);
 
         if (TbTarif::where('jenis_kendaraan', $request->jenis_kendaraan)->exists()) {
@@ -49,11 +51,13 @@ class TarifController extends Controller
     {
         $tarif = TbTarif::findOrFail($id);
         $request->validate([
-            'jenis_kendaraan' => 'required|in:motor,mobil,lainnya',
+            'jenis_kendaraan' => 'required|string|max:50',
             'tarif_per_jam'   => 'required|numeric|min:100',
+            'tarif_maks_per_hari' => 'required|numeric|min:100',
+            'denda_per_jam' => 'required|numeric|min:0',
         ]);
 
-        $tarif->update($request->only('jenis_kendaraan', 'tarif_per_jam'));
+        $tarif->update($request->all());
         TbLogAktivitas::catat(Auth::id(), "Mengubah tarif id={$id}: {$request->jenis_kendaraan} = Rp {$request->tarif_per_jam}/jam");
 
         return back()->with('success', 'Tarif berhasil diperbarui.');
