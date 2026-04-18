@@ -10,6 +10,7 @@ use App\Models\TbTarif;
 use App\Models\TbLogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class KendaraanController extends Controller
 {
@@ -27,6 +28,10 @@ class KendaraanController extends Controller
     {
         $q     = $request->input('q', '');
         $jenis = $request->input('jenis', '');
+        $jenisList = TbTarif::select('jenis_kendaraan')
+                ->distinct()
+                ->pluck('jenis_kendaraan')
+                ->map(fn($j) => trim(strtolower($j)));
         $sort  = in_array($request->input('sort'), ['plat_nomor', 'jenis_kendaraan', 'pemilik']) ? $request->input('sort') : 'id_kendaraan';
         $order = $request->input('order', 'asc') === 'desc' ? 'desc' : 'asc';
 
@@ -41,35 +46,48 @@ class KendaraanController extends Controller
         if ($jenis) $query->where('jenis_kendaraan', $jenis);
 
         $kendaraans = $query->orderBy($sort, $order)->paginate(11)->withQueryString();
-        return view('admin.kendaraan', array_merge($this->stats(), compact('kendaraans', 'q', 'jenis', 'sort', 'order')));
+        return view('admin.kendaraan', array_merge($this->stats(), compact('kendaraans', 'q', 'jenis', 'sort', 'order', 'jenisList')));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'plat_nomor'      => 'required|string|max:15|unique:tb_kendaraan,plat_nomor',
-            'jenis_kendaraan' => 'required|in:motor,mobil,lainnya',
+            'jenis_kendaraan' => 'required|string',
             'foto'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $fotoName = '';
-        if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
-            $fotoName = time() . '_' . preg_replace('/[^a-z0-9]/', '_', strtolower($request->plat_nomor)) . '.' . $request->file('foto')->extension();
-            $request->file('foto')->move(public_path('uploads/kendaraan'), $fotoName);
+        DB::beginTransaction();
+        try {
+            $kendaraan = TbKendaraan::create([
+                'plat_nomor'      => strtoupper($request->plat_nomor),
+                'jenis_kendaraan' => $request->jenis_kendaraan,
+                'merek'           => $request->merek ?? '',
+                'warna'           => $request->warna ?? '',
+                'pemilik'         => $request->pemilik ?? '',
+                'foto'            => '',
+                'created_at'      => now(),
+            ]);
+
+            $fotoName = '';
+            if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
+                $fotoName = time() . '_' . preg_replace('/[^a-z0-9]/', '_', strtolower($request->plat_nomor)) . '.' . $request->file('foto')->extension();
+                $request->file('foto')->move(public_path('uploads/kendaraan'), $fotoName);
+                $kendaraan->foto = $fotoName;
+                $kendaraan->save();
+            }
+
+            TbLogAktivitas::catat(Auth::id(), "Menambah kendaraan: " . strtoupper($request->plat_nomor) . " ({$request->jenis_kendaraan})");
+            DB::commit();
+            return back()->with('success', 'Kendaraan berhasil ditambahkan.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            if (!empty($fotoName) && file_exists(public_path('uploads/kendaraan/' . $fotoName))) {
+                @unlink(public_path('uploads/kendaraan/' . $fotoName));
+            }
+            report($e);
+            return back()->with('error', 'Gagal menambahkan kendaraan: ' . $e->getMessage());
         }
-
-        TbKendaraan::create([
-            'plat_nomor'      => strtoupper($request->plat_nomor),
-            'jenis_kendaraan' => $request->jenis_kendaraan,
-            'merek'           => $request->merek ?? '',
-            'warna'           => $request->warna ?? '',
-            'pemilik'         => $request->pemilik ?? '',
-            'foto'            => $fotoName,
-            'created_at'      => now(),
-        ]);
-
-        TbLogAktivitas::catat(Auth::id(), "Menambah kendaraan: " . strtoupper($request->plat_nomor) . " ({$request->jenis_kendaraan})");
-        return back()->with('success', 'Kendaraan berhasil ditambahkan.');
     }
 
     public function update(Request $request, $id)

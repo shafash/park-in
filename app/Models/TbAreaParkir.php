@@ -37,4 +37,9 @@ class TbAreaParkir extends Model
     {
         return $this->kapasitas - $this->terisi;
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'tb_user_area', 'area_id', 'user_id');
+    }
 }

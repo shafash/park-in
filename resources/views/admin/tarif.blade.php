@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Crud Tarif Parkir')
 @section('page-title','Tarif Parkir')
-@section('page-sub','Kelola akun petugas dan owner')
+@section('page-sub','Kelola tarif parkir')
 
 @section('content')
 @include('layouts._stats_admin')

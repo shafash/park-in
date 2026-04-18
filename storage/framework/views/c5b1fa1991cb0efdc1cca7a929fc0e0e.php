@@ -1,6 +1,6 @@
 <?php $__env->startSection('title','Log Aktivitas'); ?>
 <?php $__env->startSection('page-title','Log Aktivitas'); ?>
-<?php $__env->startSection('page-sub','Kelola akun petugas dan owner'); ?>
+<?php $__env->startSection('page-sub','Kelola aktivitas pengguna pada sistem'); ?>
 
 <?php $__env->startSection('content'); ?>
 <?php echo $__env->make('layouts._stats_admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>

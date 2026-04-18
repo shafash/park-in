@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Crud Area Parkir')
 @section('page-title','Area Parkir')
-@section('page-sub','Kelola akun petugas dan owner')
+@section('page-sub','Kelola area parkir')
 
 @section('content')
 @include('layouts._stats_admin')

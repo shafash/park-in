@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Log Aktivitas')
 @section('page-title','Log Aktivitas')
-@section('page-sub','Kelola akun petugas dan owner')
+@section('page-sub','Kelola aktivitas pengguna pada sistem')
 
 @section('content')
 @include('layouts._stats_admin')

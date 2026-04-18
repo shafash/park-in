@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Crud Kendaraan')
 @section('page-title','Kelola Kendaraan')
-@section('page-sub','Kelola akun petugas dan owner')
+@section('page-sub','Data kendaraan terdaftar pada sistem')
 
 @section('content')
 @include('layouts._stats_admin')
@@ -15,9 +15,11 @@
       <input type="text" name="q" value="{{ $q }}" placeholder="Cari Plat / Pemilik / Merek..." style="width:210px">
       <select name="jenis" onchange="this.form.submit()" style="min-width:130px">
         <option value="">Semua Jenis</option>
-        <option value="mobil"   {{ $jenis==='mobil'?'selected':'' }}>Mobil</option>
-        <option value="motor"   {{ $jenis==='motor'?'selected':'' }}>Motor</option>
-        <option value="lainnya" {{ $jenis==='lainnya'?'selected':'' }}>Truk</option>
+        @foreach($jenisList as $j)
+          <option value="{{ $j }}" {{ $jenis == $j ? 'selected' : '' }}>
+            {{ ucfirst($j) }}
+          </option>
+        @endforeach
       </select>
     </form>
     <button class="btn btn-grn btn-sm" onclick="document.getElementById('m-tambah').classList.remove('hide')">+ &nbsp;Tambah</button>
@@ -89,7 +91,7 @@
     <form method="POST" action="{{ route('admin.kendaraan.store') }}" enctype="multipart/form-data">@csrf
       <div class="form-row">
         <div class="fg"><label>Plat Nomor</label><input type="text" name="plat_nomor" placeholder="B 1234 ABC" required style="text-transform:uppercase"></div>
-        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" required><option value="">-- Pilih --</option><option value="mobil">Mobil</option><option value="motor">Motor</option><option value="lainnya">Truk</option></select></div>
+        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" required><option value="">-- Pilih --</option>@foreach($jenisList as $j) <option value="{{ $j }}">{{ ucfirst($j) }}</option> @endforeach</select></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>Merek / Model</label><input type="text" name="merek" placeholder="Contoh: Honda Vario 160"></div>

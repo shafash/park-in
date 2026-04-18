@@ -1,6 +1,6 @@
 <?php $__env->startSection('title','Crud Kendaraan'); ?>
 <?php $__env->startSection('page-title','Kelola Kendaraan'); ?>
-<?php $__env->startSection('page-sub','Kelola akun petugas dan owner'); ?>
+<?php $__env->startSection('page-sub','Data kendaraan terdaftar pada sistem'); ?>
 
 <?php $__env->startSection('content'); ?>
 <?php echo $__env->make('layouts._stats_admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
@@ -14,9 +14,12 @@
       <input type="text" name="q" value="<?php echo e($q); ?>" placeholder="Cari Plat / Pemilik / Merek..." style="width:210px">
       <select name="jenis" onchange="this.form.submit()" style="min-width:130px">
         <option value="">Semua Jenis</option>
-        <option value="mobil"   <?php echo e($jenis==='mobil'?'selected':''); ?>>Mobil</option>
-        <option value="motor"   <?php echo e($jenis==='motor'?'selected':''); ?>>Motor</option>
-        <option value="lainnya" <?php echo e($jenis==='lainnya'?'selected':''); ?>>Truk</option>
+        <?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+          <option value="<?php echo e($j); ?>" <?php echo e($jenis == $j ? 'selected' : ''); ?>>
+            <?php echo e(ucfirst($j)); ?>
+
+          </option>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
       </select>
     </form>
     <button class="btn btn-grn btn-sm" onclick="document.getElementById('m-tambah').classList.remove('hide')">+ &nbsp;Tambah</button>
@@ -88,7 +91,7 @@
     <form method="POST" action="<?php echo e(route('admin.kendaraan.store')); ?>" enctype="multipart/form-data"><?php echo csrf_field(); ?>
       <div class="form-row">
         <div class="fg"><label>Plat Nomor</label><input type="text" name="plat_nomor" placeholder="B 1234 ABC" required style="text-transform:uppercase"></div>
-        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" required><option value="">-- Pilih --</option><option value="mobil">Mobil</option><option value="motor">Motor</option><option value="lainnya">Truk</option></select></div>
+        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" required><option value="">-- Pilih --</option><?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?> <option value="<?php echo e($j); ?>"><?php echo e(ucfirst($j)); ?></option> <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></select></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>Merek / Model</label><input type="text" name="merek" placeholder="Contoh: Honda Vario 160"></div>

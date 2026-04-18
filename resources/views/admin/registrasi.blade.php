@@ -31,10 +31,10 @@
         </div>
         <div class="fg">
           <label>Area Parkir</label>
-          <select name="id_area">
+          <select name="area_ids[]" multiple id="area_select" class="form-control">
             <option value="">-- Pilih Area --</option>
             @foreach($areas as $area)
-              <option value="{{ $area->id_area }}" {{ old('id_area')==$area->id_area?'selected':'' }}>
+              <option value="{{ $area->id_area }}">
                 {{ $area->nama_area }}
               </option>
             @endforeach
@@ -127,6 +127,21 @@
     </form>
   </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#area_select').select2({
+        placeholder: "-- Pilih Area --",
+        width: '100%'
+    });
+});
+</script>
 @endsection
 
 @push('scripts')

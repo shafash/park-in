@@ -1,6 +1,7 @@
+
 <?php $__env->startSection('title','Crud Tarif Parkir'); ?>
 <?php $__env->startSection('page-title','Tarif Parkir'); ?>
-<?php $__env->startSection('page-sub','Kelola akun petugas dan owner'); ?>
+<?php $__env->startSection('page-sub','Kelola tarif parkir'); ?>
 
 <?php $__env->startSection('content'); ?>
 <?php echo $__env->make('layouts._stats_admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>

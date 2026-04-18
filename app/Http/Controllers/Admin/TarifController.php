@@ -41,7 +41,7 @@ class TarifController extends Controller
             return back()->with('error', "Tarif untuk '{$request->jenis_kendaraan}' sudah ada.");
         }
 
-        TbTarif::create($request->only('jenis_kendaraan', 'tarif_per_jam'));
+        TbTarif::create($request->only('jenis_kendaraan', 'tarif_per_jam', 'tarif_maks_per_hari', 'denda_per_jam'));
         TbLogAktivitas::catat(Auth::id(), "Menambahkan tarif: {$request->jenis_kendaraan} = Rp {$request->tarif_per_jam}/jam");
 
         return back()->with('success', 'Tarif berhasil ditambahkan.');
