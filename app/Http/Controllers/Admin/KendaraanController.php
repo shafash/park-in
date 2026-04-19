@@ -95,7 +95,7 @@ class KendaraanController extends Controller
         $kendaraan = TbKendaraan::findOrFail($id);
         $request->validate([
             'plat_nomor'      => "required|string|max:15|unique:tb_kendaraan,plat_nomor,{$id},id_kendaraan",
-            'jenis_kendaraan' => 'required|in:motor,mobil,lainnya',
+            'jenis_kendaraan' => 'required|string',
             'foto'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 

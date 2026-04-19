@@ -116,7 +116,7 @@
       <input type="hidden" name="hapus_foto" id="hapus_foto_flag" value="0">
       <div class="form-row">
         <div class="fg"><label>Plat Nomor</label><input type="text" name="plat_nomor" id="e_plat" required style="text-transform:uppercase"></div>
-        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" id="e_jenis"><option value="mobil">Mobil</option><option value="motor">Motor</option><option value="lainnya">Truk</option></select></div>
+        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" id="e_jenis"><?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?> <option value="<?php echo e($j); ?>"><?php echo e(ucfirst($j)); ?></option> <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></select></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>Merek / Model</label><input type="text" name="merek" id="e_merek"></div>
