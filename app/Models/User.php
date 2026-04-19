@@ -28,11 +28,6 @@ class User extends Authenticatable
     {
         return $this->belongsTo(TbAreaParkir::class, 'id_area');
     }
-
-    public function areas()
-    {
-        return $this->belongsToMany(TbAreaParkir::class, 'tb_user_area', 'user_id', 'area_id');
-    }
     
     public function transaksis(): HasMany
     {
