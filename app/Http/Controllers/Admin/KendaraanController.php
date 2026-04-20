@@ -18,7 +18,7 @@ class KendaraanController extends Controller
     {
         return [
             'total_user'  => User::count(),
-            'area_aktif'  => TbAreaParkir::count(),
+            'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
             'jenis_tarif' => TbTarif::count(),
             'log_hari'    => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
         ];

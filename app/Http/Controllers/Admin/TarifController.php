@@ -16,7 +16,7 @@ class TarifController extends Controller
     {
         return [
             'total_user'  => User::count(),
-            'area_aktif'  => TbAreaParkir::count(),
+            'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
             'jenis_tarif' => TbTarif::count(),
             'log_hari'    => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
         ];
@@ -32,16 +32,18 @@ class TarifController extends Controller
     {
         $request->validate([
             'jenis_kendaraan' => 'required|string|max:50',
+            'tarif_awal'      => 'required|numeric|min:0',
             'tarif_per_jam'   => 'required|numeric|min:100',
-            'denda_per_jam' => 'required|numeric|min:0',
+            'tarif_maks_per_hari' => 'required|numeric|min:0',
+            'denda_per_jam'   => 'required|numeric|min:0',
         ]);
 
         if (TbTarif::where('jenis_kendaraan', $request->jenis_kendaraan)->exists()) {
             return back()->with('error', "Tarif untuk '{$request->jenis_kendaraan}' sudah ada.");
         }
 
-        TbTarif::create($request->only('jenis_kendaraan', 'tarif_per_jam', 'denda_per_jam'));
-        TbLogAktivitas::catat(Auth::id(), "Menambahkan tarif: {$request->jenis_kendaraan} = Rp {$request->tarif_per_jam}/jam");
+        TbTarif::create($request->only('jenis_kendaraan', 'tarif_awal', 'tarif_per_jam', 'tarif_maks_per_hari', 'denda_per_jam'));
+        TbLogAktivitas::catat(Auth::id(), "Menambahkan tarif: {$request->jenis_kendaraan} = Rp {$request->tarif_awal} (awal), Rp {$request->tarif_per_jam}/jam, maks Rp {$request->tarif_maks_per_hari}");
 
         return back()->with('success', 'Tarif berhasil ditambahkan.');
     }
@@ -51,11 +53,13 @@ class TarifController extends Controller
         $tarif = TbTarif::findOrFail($id);
         $request->validate([
             'jenis_kendaraan' => 'required|string|max:50',
+            'tarif_awal'      => 'required|numeric|min:0',
             'tarif_per_jam'   => 'required|numeric|min:100',
-            'denda_per_jam' => 'required|numeric|min:0',
+            'tarif_maks_per_hari' => 'required|numeric|min:0',
+            'denda_per_jam'   => 'required|numeric|min:0',
         ]);
 
-        $tarif->update($request->only('jenis_kendaraan', 'tarif_per_jam', 'denda_per_jam'));
+        $tarif->update($request->only('jenis_kendaraan', 'tarif_awal', 'tarif_per_jam', 'tarif_maks_per_hari', 'denda_per_jam'));
         TbLogAktivitas::catat(Auth::id(), "Mengubah tarif id={$id}: {$request->jenis_kendaraan} = Rp {$request->tarif_per_jam}/jam");
 
         return back()->with('success', 'Tarif berhasil diperbarui.');

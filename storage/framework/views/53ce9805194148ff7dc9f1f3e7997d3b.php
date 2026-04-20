@@ -90,6 +90,26 @@
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
       </tbody>
     </table>
+    <div class="pagination-wrap">
+      <?php if($users->lastPage() > 1): ?>
+        <div class="pagination">
+          <a href="<?php echo e($users->previousPageUrl()); ?>" class="btn btn-out btn-xs <?php echo e($users->onFirstPage() ? 'disabled' : ''); ?>">
+            ←
+          </a>
+
+          <?php for($i = 1; $i <= $users->lastPage(); $i++): ?>
+            <a href="btn btn-xs <?php echo e($users->currentPage() == $i ? 'btn-grn' : 'btn-out'); ?>">
+              <?php echo e($i); ?>
+
+            </a>  
+          <?php endfor; ?>
+
+          <a href="<?php echo e($users->nextPageUrl()); ?>" class="btn btn-out btn-xs <?php echo e($users->currentPage() == $users->lastPage() ? 'disabled' : ''); ?>">
+            →
+          </a>
+        </div>
+      <?php endif; ?>
+    </div>
   </div>
 </div>
 
@@ -107,7 +127,7 @@
           <option value="owner">Owner</option>
         </select>
       </div>
-      <div class="fg" id="e_area">
+      <div class="fg" id="e_area_wrap">
         <label>Area Parkir</label>
         <select name="id_area" id="e_area">
           <option value="">-- Pilih Area --</option>

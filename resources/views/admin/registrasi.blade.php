@@ -89,6 +89,25 @@
       @endforeach
       </tbody>
     </table>
+    <div class="pagination-wrap">
+      @if ($users->lastPage() > 1)
+        <div class="pagination">
+          <a href="{{ $users->previousPageUrl() }}" class="btn btn-out btn-xs {{ $users->onFirstPage() ? 'disabled' : '' }}">
+            ←
+          </a>
+
+          @for ($i = 1; $i <= $users->lastPage(); $i++)
+            <a href="btn btn-xs {{ $users->currentPage() == $i ? 'btn-grn' : 'btn-out' }}">
+              {{ $i }}
+            </a>  
+          @endfor
+
+          <a href="{{ $users->nextPageUrl() }}" class="btn btn-out btn-xs {{ $users->currentPage() == $users->lastPage() ? 'disabled' : '' }}">
+            →
+          </a>
+        </div>
+      @endif
+    </div>
   </div>
 </div>
 
@@ -106,7 +125,7 @@
           <option value="owner">Owner</option>
         </select>
       </div>
-      <div class="fg" id="e_area">
+      <div class="fg" id="e_area_wrap">
         <label>Area Parkir</label>
         <select name="id_area" id="e_area">
           <option value="">-- Pilih Area --</option>

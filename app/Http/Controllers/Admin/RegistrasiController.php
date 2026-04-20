@@ -17,7 +17,7 @@ class RegistrasiController extends Controller
     {
         return [
             'total_user' => User::count(),
-            'area_aktif' => TbAreaParkir::count(),
+            'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
             'jenis_tarif'=> TbTarif::count(),
             'log_hari'   => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
         ];
@@ -25,7 +25,7 @@ class RegistrasiController extends Controller
 
     public function index()
     {
-        $users = User::orderBy('role')->orderBy('nama_lengkap')->get();
+        $users = User::with('area')->orderBy('role')->orderBy('nama_lengkap')->paginate(10);
         $areas = TbAreaParkir::orderBy('nama_area')->get();
         return view('admin.registrasi', array_merge($this->stats(), compact('users', 'areas')));
     }
