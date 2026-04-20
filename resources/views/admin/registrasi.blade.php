@@ -89,25 +89,18 @@
       @endforeach
       </tbody>
     </table>
-    <div class="pagination-wrap">
-      @if ($users->lastPage() > 1)
-        <div class="pagination">
-          <a href="{{ $users->previousPageUrl() }}" class="btn btn-out btn-xs {{ $users->onFirstPage() ? 'disabled' : '' }}">
-            ←
-          </a>
-
-          @for ($i = 1; $i <= $users->lastPage(); $i++)
-            <a href="btn btn-xs {{ $users->currentPage() == $i ? 'btn-grn' : 'btn-out' }}">
-              {{ $i }}
-            </a>  
-          @endfor
-
-          <a href="{{ $users->nextPageUrl() }}" class="btn btn-out btn-xs {{ $users->currentPage() == $users->lastPage() ? 'disabled' : '' }}">
-            →
-          </a>
-        </div>
-      @endif
+    @if($users->hasPages())
+    <div class="pager">
+      <span class="pager-info">Hal {{ $users->currentPage() }}/{{ $users->lastPage() }} — {{ $users->total() }} entri</span>
+      <div class="pager-btns">
+        @if($users->onFirstPage()) <span class="pb dis">&#8249;</span> @else <a href="{{ $users->previousPageUrl() }}" class="pb">&#8249;</a> @endif
+        @foreach($users->getUrlRange(max(1,$users->currentPage()-2), min($users->lastPage(),$users->currentPage()+2)) as $page => $url)
+          <a href="{{ $url }}" class="pb {{ $page === $users->currentPage() ? 'act' : '' }}">{{ $page }}</a>
+        @endforeach
+        @if($users->hasMorePages()) <a href="{{ $users->nextPageUrl() }}" class="pb">&#8250;</a> @else <span class="pb dis">&#8250;</span> @endif
+      </div>
     </div>
+    @endif
   </div>
 </div>
 

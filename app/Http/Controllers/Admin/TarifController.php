@@ -7,6 +7,7 @@ use App\Models\TbTarif;
 use App\Models\User;
 use App\Models\TbAreaParkir;
 use App\Models\TbLogAktivitas;
+use App\Models\TbKendaraan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,6 +18,7 @@ class TarifController extends Controller
         return [
             'total_user'  => User::count(),
             'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
+            'total_kendaraan' => TbKendaraan::count(),
             'jenis_tarif' => TbTarif::count(),
             'log_hari'    => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
         ];

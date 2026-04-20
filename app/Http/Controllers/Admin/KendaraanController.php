@@ -19,7 +19,7 @@ class KendaraanController extends Controller
         return [
             'total_user'  => User::count(),
             'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
-            'jenis_tarif' => TbTarif::count(),
+            'total_kendaraan' => TbKendaraan::count(),
             'log_hari'    => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
         ];
     }
@@ -52,16 +52,32 @@ class KendaraanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'plat_nomor'      => 'required|string|max:15|unique:tb_kendaraan,plat_nomor',
+            'plat_nomor'      => 'nullable|string|max:15|unique:tb_kendaraan,plat_nomor',
             'jenis_kendaraan' => 'required|string',
             'foto'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         DB::beginTransaction();
         try {
+            $jenis = $request->jenis_kendaraan;
+            $plat = trim((string) $request->plat_nomor);
+            if (strtolower($jenis) === 'sepeda') {
+                if ($plat === '') {
+                    do {
+                        $code = 'SPD-' . strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4));
+                    } while (TbKendaraan::where('plat_nomor', $code)->exists());
+                    $plat = $code;
+                }
+            } else {
+                $plat = strtoupper($plat);
+            }
+
+            // if still blank (shouldn't happen), set to null
+            if ($plat === '') $plat = null;
+
             $kendaraan = TbKendaraan::create([
-                'plat_nomor'      => strtoupper($request->plat_nomor),
-                'jenis_kendaraan' => $request->jenis_kendaraan,
+                'plat_nomor'      => $plat,
+                'jenis_kendaraan' => $jenis,
                 'merek'           => $request->merek ?? '',
                 'warna'           => $request->warna ?? '',
                 'pemilik'         => $request->pemilik ?? '',
@@ -77,7 +93,7 @@ class KendaraanController extends Controller
                 $kendaraan->save();
             }
 
-            TbLogAktivitas::catat(Auth::id(), "Menambah kendaraan: " . strtoupper($request->plat_nomor) . " ({$request->jenis_kendaraan})");
+            TbLogAktivitas::catat(Auth::id(), "Menambah kendaraan: " . ($kendaraan->plat_nomor ?: '—') . " ({$request->jenis_kendaraan})");
             DB::commit();
             return back()->with('success', 'Kendaraan berhasil ditambahkan.');
         } catch (\Throwable $e) {
@@ -94,7 +110,7 @@ class KendaraanController extends Controller
     {
         $kendaraan = TbKendaraan::findOrFail($id);
         $request->validate([
-            'plat_nomor'      => "required|string|max:15|unique:tb_kendaraan,plat_nomor,{$id},id_kendaraan",
+            'plat_nomor'      => 'nullable|string|max:15',
             'jenis_kendaraan' => 'required|string',
             'foto'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
@@ -110,9 +126,30 @@ class KendaraanController extends Controller
             $request->file('foto')->move(public_path('uploads/kendaraan'), $fotoName);
         }
 
+        // Handle plat logic: if jenis sepeda and plat not provided, generate code; otherwise validate uniqueness
+        $jenis = $request->jenis_kendaraan;
+        $plat = trim((string) $request->plat_nomor);
+        if (strtolower($jenis) === 'sepeda') {
+            if ($plat === '') {
+                // generate a new unique SPD code
+                do {
+                    $code = 'SPD-' . strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4));
+                } while (TbKendaraan::where('plat_nomor', $code)->exists());
+                $plat = $code;
+            }
+        } else {
+            $plat = strtoupper($plat);
+        }
+
+        // If plat provided, ensure uniqueness (exclude current)
+        if ($plat) {
+            $exists = TbKendaraan::where('plat_nomor', $plat)->where('id_kendaraan', '!=', $id)->exists();
+            if ($exists) return back()->with('error', 'Plat nomor sudah dipakai.')->withInput();
+        }
+
         $kendaraan->update([
-            'plat_nomor'      => strtoupper($request->plat_nomor),
-            'jenis_kendaraan' => $request->jenis_kendaraan,
+            'plat_nomor'      => $plat ?: null,
+            'jenis_kendaraan' => $jenis,
             'merek'           => $request->merek ?? '',
             'warna'           => $request->warna ?? '',
             'pemilik'         => $request->pemilik ?? '',

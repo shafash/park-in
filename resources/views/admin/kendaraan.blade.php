@@ -90,8 +90,8 @@
     <div class="modal-title">Tambah Kendaraan <button class="modal-close" onclick="document.getElementById('m-tambah').classList.add('hide')">✕</button></div>
     <form method="POST" action="{{ route('admin.kendaraan.store') }}" enctype="multipart/form-data">@csrf
       <div class="form-row">
-        <div class="fg"><label>Plat Nomor</label><input type="text" name="plat_nomor" placeholder="B 1234 ABC" required style="text-transform:uppercase"></div>
-        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" required><option value="">-- Pilih --</option>@foreach($jenisList as $j) <option value="{{ $j }}">{{ ucfirst($j) }}</option> @endforeach</select></div>
+        <div class="fg"><label>Plat Nomor</label><input type="text" name="plat_nomor" id="add_plat" placeholder="B 1234 ABC (kosongkan untuk sepeda)" style="text-transform:uppercase"></div>
+        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" id="add_jenis" required onchange="togglePlatForAdd(this.value)"><option value="">-- Pilih --</option>@foreach($jenisList as $j) <option value="{{ $j }}">{{ ucfirst($j) }}</option> @endforeach</select></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>Merek / Model</label><input type="text" name="merek" placeholder="Contoh: Honda Vario 160"></div>
@@ -115,8 +115,8 @@
     <form method="POST" id="edit-form" enctype="multipart/form-data">@csrf @method('PUT')
       <input type="hidden" name="hapus_foto" id="hapus_foto_flag" value="0">
       <div class="form-row">
-        <div class="fg"><label>Plat Nomor</label><input type="text" name="plat_nomor" id="e_plat" required style="text-transform:uppercase"></div>
-        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" id="e_jenis">@foreach($jenisList as $j) <option value="{{ $j }}">{{ ucfirst($j) }}</option> @endforeach</select></div>
+        <div class="fg"><label>Plat Nomor</label><input type="text" name="plat_nomor" id="e_plat" style="text-transform:uppercase"></div>
+        <div class="fg"><label>Jenis</label><select name="jenis_kendaraan" id="e_jenis" onchange="togglePlatForEdit(this.value)">@foreach($jenisList as $j) <option value="{{ $j }}">{{ ucfirst($j) }}</option> @endforeach</select></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>Merek / Model</label><input type="text" name="merek" id="e_merek"></div>
@@ -189,7 +189,38 @@ function openEdit(id, plat, jenis, merek, warna, pemilik, foto) {
     wrap.style.display = 'none';
   }
   document.getElementById('edit-form').action = '/admin/kendaraan/' + id;
+  // adjust plat input requirement/placeholder based on jenis
+  togglePlatForEdit(jenis);
   document.getElementById('m-edit').classList.remove('hide');
 }
+
+function togglePlatForAdd(jenis) {
+  var inp = document.getElementById('add_plat');
+  if (!inp) return;
+  if (String(jenis).toLowerCase() === 'sepeda') {
+    inp.removeAttribute('required');
+    inp.placeholder = 'Kosongkan untuk sepeda — kode otomatis akan dibuat';
+  } else {
+    inp.setAttribute('required','required');
+    inp.placeholder = 'B 1234 ABC';
+  }
+}
+
+function togglePlatForEdit(jenis) {
+  var inp = document.getElementById('e_plat');
+  if (!inp) return;
+  if (String(jenis).toLowerCase() === 'sepeda') {
+    inp.removeAttribute('required');
+    inp.placeholder = 'Kosongkan untuk sepeda — kode otomatis akan dibuat';
+  } else {
+    inp.setAttribute('required','required');
+    inp.placeholder = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var addSel = document.getElementById('add_jenis');
+  if (addSel) togglePlatForAdd(addSel.value);
+});
 </script>
 @endpush

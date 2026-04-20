@@ -90,26 +90,18 @@
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
       </tbody>
     </table>
-    <div class="pagination-wrap">
-      <?php if($users->lastPage() > 1): ?>
-        <div class="pagination">
-          <a href="<?php echo e($users->previousPageUrl()); ?>" class="btn btn-out btn-xs <?php echo e($users->onFirstPage() ? 'disabled' : ''); ?>">
-            ←
-          </a>
-
-          <?php for($i = 1; $i <= $users->lastPage(); $i++): ?>
-            <a href="btn btn-xs <?php echo e($users->currentPage() == $i ? 'btn-grn' : 'btn-out'); ?>">
-              <?php echo e($i); ?>
-
-            </a>  
-          <?php endfor; ?>
-
-          <a href="<?php echo e($users->nextPageUrl()); ?>" class="btn btn-out btn-xs <?php echo e($users->currentPage() == $users->lastPage() ? 'disabled' : ''); ?>">
-            →
-          </a>
-        </div>
-      <?php endif; ?>
+    <?php if($users->hasPages()): ?>
+    <div class="pager">
+      <span class="pager-info">Hal <?php echo e($users->currentPage()); ?>/<?php echo e($users->lastPage()); ?> — <?php echo e($users->total()); ?> entri</span>
+      <div class="pager-btns">
+        <?php if($users->onFirstPage()): ?> <span class="pb dis">&#8249;</span> <?php else: ?> <a href="<?php echo e($users->previousPageUrl()); ?>" class="pb">&#8249;</a> <?php endif; ?>
+        <?php $__currentLoopData = $users->getUrlRange(max(1,$users->currentPage()-2), min($users->lastPage(),$users->currentPage()+2)); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $page => $url): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+          <a href="<?php echo e($url); ?>" class="pb <?php echo e($page === $users->currentPage() ? 'act' : ''); ?>"><?php echo e($page); ?></a>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        <?php if($users->hasMorePages()): ?> <a href="<?php echo e($users->nextPageUrl()); ?>" class="pb">&#8250;</a> <?php else: ?> <span class="pb dis">&#8250;</span> <?php endif; ?>
+      </div>
     </div>
+    <?php endif; ?>
   </div>
 </div>
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TbAreaParkir;
 use App\Models\User;
 use App\Models\TbTarif;
+use App\Models\TbKendaraan;
 use App\Models\TbLogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,7 @@ class AreaController extends Controller
         return [
             'total_user'  => User::count(),
             'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
-            'jenis_tarif' => TbTarif::count(),
+            'total_kendaraan' => TbKendaraan::count(),
             'log_hari'    => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
         ];
     }
