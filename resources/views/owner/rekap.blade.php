@@ -247,9 +247,16 @@
                         style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                                padding:8px 12px;color:var(--wht);font-size:12px;outline:none;min-width:150px">
                     <option value="">Semua Jenis</option>
-                    <option value="motor"   {{ $fj === 'motor'   ? 'selected' : '' }}>Motor</option>
-                    <option value="mobil"   {{ $fj === 'mobil'   ? 'selected' : '' }}>Mobil</option>
-                    <option value="lainnya" {{ $fj === 'lainnya' ? 'selected' : '' }}>Truk / Lainnya</option>
+                    @if(isset($jenisList) && count($jenisList))
+                        @foreach($jenisList as $j)
+                            @php $label = $j === 'lainnya' ? 'Truk / Lainnya' : ucfirst($j); @endphp
+                            <option value="{{ $j }}" {{ $fj === $j ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    @else
+                        <option value="motor"   {{ $fj === 'motor'   ? 'selected' : '' }}>Motor</option>
+                        <option value="mobil"   {{ $fj === 'mobil'   ? 'selected' : '' }}>Mobil</option>
+                        <option value="lainnya" {{ $fj === 'lainnya' ? 'selected' : '' }}>Truk / Lainnya</option>
+                    @endif
                 </select>
             </div>
 
@@ -287,18 +294,9 @@
         <tbody>
         @forelse($rekap as $t)
         @php
-            $jc = match($t->kendaraan->jenis_kendaraan ?? '') {
-                'motor'   => 'p-grn',
-                'mobil'   => 'p-blu',
-                'lainnya' => 'p-ora',
-                default   => 'p-blu',
-            };
-            $jl = match($t->kendaraan->jenis_kendaraan ?? '') {
-                'motor'   => 'Motor',
-                'mobil'   => 'Mobil',
-                'lainnya' => 'Truk',
-                default   => '—',
-            };
+            $kj = $t->kendaraan->jenis_kendaraan ?? '';
+            $jc = $jenisColors[$kj] ?? 'p-blu';
+            $jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '—');
         @endphp
         <tr>
             <td class="t-gray" style="font-size:11px">

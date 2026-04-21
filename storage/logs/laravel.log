@@ -7776,3 +7776,18 @@
 #60 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('C://park-in//publ...')
 #61 {main}
 "} 
+[2026-04-21 19:37:56] local.ERROR: Unclosed '{' on line 12 {"exception":"[object] (ParseError(code: 0): Unclosed '{' on line 12 at C:/park-in/app/Providers/AppServiceProvider.php:39)
+[stacktrace]
+#0 C:/park-in/vendor/composer/ClassLoader.php(427): Composer/Autoload/{closure}('C://park-in//vend...')
+#1 [internal function]: Composer/Autoload/ClassLoader->loadClass('App//Providers//A...')
+#2 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/RegisterProviders.php(52): class_exists('App//Providers//A...')
+#3 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/RegisterProviders.php(34): Illuminate/Foundation/Bootstrap/RegisterProviders->mergeAdditionalProviders(Object(Illuminate/Foundation/Application))
+#4 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(342): Illuminate/Foundation/Bootstrap/RegisterProviders->bootstrap(Object(Illuminate/Foundation/Application))
+#5 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(187): Illuminate/Foundation/Application->bootstrapWith(Array)
+#6 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(171): Illuminate/Foundation/Http/Kernel->bootstrap()
+#7 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(145): Illuminate/Foundation/Http/Kernel->sendRequestThroughRouter(Object(Illuminate/Http/Request))
+#8 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1220): Illuminate/Foundation/Http/Kernel->handle(Object(Illuminate/Http/Request))
+#9 C:/park-in/public/index.php(17): Illuminate/Foundation/Application->handleRequest(Object(Illuminate/Http/Request))
+#10 C:/park-in/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('C://park-in//publ...')
+#11 {main}
+"} 

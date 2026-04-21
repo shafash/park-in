@@ -51,7 +51,12 @@
         @endif
       </td>
       <td class="fw7">{{ $k->plat_nomor }}</td>
-      <td><span class="pill {{ $k->jenisPill }}">{{ $k->jenisLabel }}</span></td>
+      @php
+        $kj = $k->jenis_kendaraan ?? '';
+        $k_jc = $jenisColors[$kj] ?? 'p-blu';
+        $k_jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '—');
+      @endphp
+      <td><span class="pill {{ $k_jc }}">{{ $k_jl }}</span></td>
       <td>{{ $k->merek ?: '—' }}</td>
       <td class="t-gray" style="font-size:12px">{{ $k->warna ?: '—' }}</td>
       <td>{{ $k->pemilik ?: '—' }}</td>

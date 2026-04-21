@@ -255,9 +255,16 @@
                         style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                                padding:8px 12px;color:var(--wht);font-size:12px;outline:none;min-width:150px">
                     <option value="">Semua Jenis</option>
-                    <option value="motor"   <?php echo e($fj === 'motor'   ? 'selected' : ''); ?>>Motor</option>
-                    <option value="mobil"   <?php echo e($fj === 'mobil'   ? 'selected' : ''); ?>>Mobil</option>
-                    <option value="lainnya" <?php echo e($fj === 'lainnya' ? 'selected' : ''); ?>>Truk / Lainnya</option>
+                    <?php if(isset($jenisList) && count($jenisList)): ?>
+                        <?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php $label = $j === 'lainnya' ? 'Truk / Lainnya' : ucfirst($j); ?>
+                            <option value="<?php echo e($j); ?>" <?php echo e($fj === $j ? 'selected' : ''); ?>><?php echo e($label); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    <?php else: ?>
+                        <option value="motor"   <?php echo e($fj === 'motor'   ? 'selected' : ''); ?>>Motor</option>
+                        <option value="mobil"   <?php echo e($fj === 'mobil'   ? 'selected' : ''); ?>>Mobil</option>
+                        <option value="lainnya" <?php echo e($fj === 'lainnya' ? 'selected' : ''); ?>>Truk / Lainnya</option>
+                    <?php endif; ?>
                 </select>
             </div>
 
@@ -295,18 +302,9 @@
         <tbody>
         <?php $__empty_1 = true; $__currentLoopData = $rekap; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
         <?php
-            $jc = match($t->kendaraan->jenis_kendaraan ?? '') {
-                'motor'   => 'p-grn',
-                'mobil'   => 'p-blu',
-                'lainnya' => 'p-ora',
-                default   => 'p-blu',
-            };
-            $jl = match($t->kendaraan->jenis_kendaraan ?? '') {
-                'motor'   => 'Motor',
-                'mobil'   => 'Mobil',
-                'lainnya' => 'Truk',
-                default   => '—',
-            };
+            $kj = $t->kendaraan->jenis_kendaraan ?? '';
+            $jc = $jenisColors[$kj] ?? 'p-blu';
+            $jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '—');
         ?>
         <tr>
             <td class="t-gray" style="font-size:11px">
