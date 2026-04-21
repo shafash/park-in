@@ -15,11 +15,13 @@ class TransaksiController extends Controller
 {
     private function stats(): array
     {
+        $userArea = Auth::user()->id_area ?? null;
+
         return [
-            'masuk'  => TbTransaksi::whereDate('waktu_masuk', today())->count(),
-            'keluar' => TbTransaksi::whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
-            'diarea' => TbTransaksi::where('status', 'masuk')->count(),
-            'struk'  => TbTransaksi::whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
+            'masuk'  => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->count(),
+            'keluar' => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
+            'diarea' => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->where('status', 'masuk')->count(),
+            'struk'  => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
         ];
     }
 
@@ -39,6 +41,8 @@ class TransaksiController extends Controller
             ->limit(8)
             ->get(['id_kendaraan', 'plat_nomor', 'jenis_kendaraan', 'merek', 'warna', 'pemilik', 'foto'])
             ->map(function ($k) {
+                $tarifId = \App\Models\TbTarif::where('jenis_kendaraan', $k->jenis_kendaraan)->value('id_tarif');
+
                 return [
                     'id_kendaraan'    => $k->id_kendaraan,
                     'plat_nomor'      => $k->plat_nomor,
@@ -48,6 +52,7 @@ class TransaksiController extends Controller
                     'warna'           => $k->warna,
                     'pemilik'         => $k->pemilik,
                     'foto_url'        => $k->fotoUrl,
+                    'id_tarif_match'  => $tarifId,
                 ];
             });
 
@@ -62,15 +67,31 @@ class TransaksiController extends Controller
         $sort   = in_array($request->input('sort'), ['waktu_masuk', 'biaya_total']) ? $request->input('sort') : 'waktu_masuk';
         $order  = $request->input('order', 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $userArea = Auth::user()->id_area ?? null;
+
         $query = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
             ->when($q,      fn($q2) => $q2->whereHas('kendaraan', fn($k) => $k->where('plat_nomor', 'like', "%{$q}%")))
             ->when($status, fn($q2) => $q2->where('status', $status))
             ->when($jenis,  fn($q2) => $q2->whereHas('kendaraan', fn($k) => $k->where('jenis_kendaraan', $jenis)))
+            ->when($userArea, fn($q2) => $q2->where('id_area', $userArea))
             ->orderBy($sort, $order);
 
         $transaksis = $query->paginate(9)->withQueryString();
 
-        return view('petugas.transaksi', array_merge($this->stats(), compact('transaksis', 'q', 'status', 'jenis', 'sort', 'order')));
+        // Build dynamic list of jenis kendaraan from DB (prefer tariffs, fallback to kendaraan)
+        $jenisList = TbTarif::orderBy('jenis_kendaraan')->pluck('jenis_kendaraan')->filter()->unique()->values()->all();
+        if (empty($jenisList)) {
+            $jenisList = TbKendaraan::distinct()->orderBy('jenis_kendaraan')->pluck('jenis_kendaraan')->filter()->unique()->values()->all();
+        }
+
+        // Assign rotating color classes to each jenis so they don't all look the same
+        $colorPool = ['p-grn', 'p-blu', 'p-ora'];
+        $jenisColors = [];
+        foreach ($jenisList as $i => $j) {
+            $jenisColors[$j] = $colorPool[$i % count($colorPool)];
+        }
+
+        return view('petugas.transaksi', array_merge($this->stats(), compact('transaksis', 'q', 'status', 'jenis', 'sort', 'order', 'jenisList', 'jenisColors')));
     }
 
     public function masukForm()
@@ -79,7 +100,22 @@ class TransaksiController extends Controller
         $tarifs = TbTarif::orderBy('jenis_kendaraan')->get();
         $allAreas = TbAreaParkir::orderBy('nama_area')->get();
 
-        return view('petugas.masuk', array_merge($this->stats(), compact('areas', 'tarifs', 'allAreas')));
+        // Jika petugas/admin punya area tetap, kirimkan juga sebagai `area`
+        $area = Auth::user()->area ?? null;
+
+        // Live feed: aktivitas hari ini (masuk/keluar) — batasi ke area user jika ditetapkan
+        $userArea = Auth::user()->id_area ?? null;
+        $liveFeed = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
+            ->when($userArea, fn($q) => $q->where('id_area', $userArea))
+            ->where(function($q) {
+                $q->whereDate('waktu_masuk', today())
+                  ->orWhereDate('waktu_keluar', today());
+            })
+            ->orderByDesc('waktu_masuk')
+            ->limit(3)
+            ->get();
+
+        return view('petugas.masuk', array_merge($this->stats(), compact('areas', 'tarifs', 'allAreas', 'area', 'liveFeed')));
     }
 
     public function masukStore(Request $request)
@@ -109,6 +145,10 @@ class TransaksiController extends Controller
         }
 
         $area = TbAreaParkir::findOrFail($request->id_area);
+        // Jika user punya area yang ditetapkan, pastikan tidak boleh pilih area lain
+        if (Auth::user()->id_area && Auth::user()->id_area != $request->id_area) {
+            return back()->with('error', 'Anda tidak berwenang mengakses area tersebut.')->withInput();
+        }
         if ($area->terisi >= $area->kapasitas) {
             return back()->with('error', "Area {$area->nama_area} sudah penuh!")->withInput();
         }
@@ -135,6 +175,11 @@ class TransaksiController extends Controller
             ->where('status', 'masuk')
             ->firstOrFail();
 
+        // Batasi operasi keluar ke area milik user ketika ditetapkan
+        if (Auth::user()->id_area && $trx->id_area != Auth::user()->id_area) {
+            return back()->with('error', 'Anda tidak berwenang melihat transaksi di area ini.');
+        }
+
         $durEst = max(1, (int) ceil((now()->timestamp - $trx->waktu_masuk->timestamp) / 3600));
         $estBiaya = $durEst * $trx->tarif->tarif_per_jam;
 
@@ -147,6 +192,11 @@ class TransaksiController extends Controller
             ->where('id_parkir', $id)
             ->where('status', 'masuk')
             ->firstOrFail();
+
+        // Batasi operasi keluar ke area milik user ketika ditetapkan
+        if (Auth::user()->id_area && $trx->id_area != Auth::user()->id_area) {
+            return back()->with('error', 'Anda tidak berwenang memproses transaksi di area ini.');
+        }
 
         $wk       = now();
         $dur      = max(1, (int) ceil(($wk->timestamp - $trx->waktu_masuk->timestamp) / 3600));

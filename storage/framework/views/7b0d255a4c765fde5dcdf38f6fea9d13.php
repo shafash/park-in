@@ -29,9 +29,18 @@
       </select>
       <select name="jenis" onchange="this.form.submit()" style="min-width:130px">
         <option value="">Semua Jenis</option>
-        <option value="motor"   <?php echo e($jenis==='motor'?'selected':''); ?>>Motor</option>
-        <option value="mobil"   <?php echo e($jenis==='mobil'?'selected':''); ?>>Mobil</option>
-        <option value="lainnya" <?php echo e($jenis==='lainnya'?'selected':''); ?>>Truk</option>
+        <?php if(isset($jenisList) && count($jenisList)): ?>
+          <?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php
+              $label = $j === 'lainnya' ? 'Truk' : ucfirst($j);
+            ?>
+            <option value="<?php echo e($j); ?>" <?php echo e($jenis === $j ? 'selected' : ''); ?>><?php echo e($label); ?></option>
+          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        <?php else: ?>
+          <option value="motor"   <?php echo e($jenis==='motor'?'selected':''); ?>>Motor</option>
+          <option value="mobil"   <?php echo e($jenis==='mobil'?'selected':''); ?>>Mobil</option>
+          <option value="lainnya" <?php echo e($jenis==='lainnya'?'selected':''); ?>>Truk</option>
+        <?php endif; ?>
       </select>
       <select name="sort" onchange="this.form.submit()" style="min-width:120px">
         <option value="waktu_masuk"  <?php echo e($sort==='waktu_masuk'?'selected':''); ?>>Terbaru</option>
@@ -51,8 +60,9 @@
     <tbody>
     <?php $__empty_1 = true; $__currentLoopData = $transaksis; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
     <?php
-      $jc = match($t->kendaraan->jenis_kendaraan??'') { 'motor'=>'p-grn','mobil'=>'p-blu','lainnya'=>'p-ora', default=>'p-blu' };
-      $jl = match($t->kendaraan->jenis_kendaraan??'') { 'lainnya'=>'Truk', default=>ucfirst($t->kendaraan->jenis_kendaraan??'') };
+      $kj = $t->kendaraan->jenis_kendaraan ?? '';
+      $jc = ($jenisColors[$kj] ?? 'p-blu');
+      $jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '');
       $sc = $t->status === 'masuk' ? 'p-grn' : 'p-blu';
     ?>
     <tr>

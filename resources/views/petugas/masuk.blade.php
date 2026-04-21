@@ -389,6 +389,7 @@ function renderDD(data) {
     <div class="dd-item" data-plat="${k.plat_nomor}" data-jenis="${k.jenis_kendaraan}"
          data-jlbl="${k.jenis_label}" data-merek="${k.merek}"
          data-warna="${k.warna}" data-pemilik="${k.pemilik}" data-foto="${k.foto_url}"
+         data-idtarif="${k.id_tarif_match ?? ''}"
          style="padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--bdr);
                 display:flex;align-items:center;gap:12px">
       <div style="flex:1">
@@ -413,8 +414,11 @@ function pilihKendaraan(el) {
   inpPlat.value = el.dataset.plat;
   dd.style.display = 'none';
 
-  // Auto-set tarif
-  if (tarifMap[el.dataset.jenis]) selTarif.value = tarifMap[el.dataset.jenis];
+  if (el.dataset.idtarif) {
+    selTarif.value = el.dataset.idtarif;
+  } else if (tarifMap[el.dataset.jenis]) {
+    selTarif.value = tarifMap[el.dataset.jenis];
+  }
 
   // Tampilkan info box
   document.getElementById('ki_merek').textContent   = el.dataset.merek   || '—';
