@@ -14,10 +14,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Use simple pagination (kita pakai custom pager di Blade)
         Paginator::useBootstrapFive();
         
-        // Share dynamic jenis list and consistent color mapping across all views
         try {
             $jenisList = TbTarif::orderBy('jenis_kendaraan')->pluck('jenis_kendaraan')->filter()->unique()->values()->all();
             if (empty($jenisList)) {
