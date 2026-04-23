@@ -31,15 +31,8 @@
         <option value="">Semua Jenis</option>
         <?php if(isset($jenisList) && count($jenisList)): ?>
           <?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <?php
-              $label = $j === 'lainnya' ? 'Truk' : ucfirst($j);
-            ?>
-            <option value="<?php echo e($j); ?>" <?php echo e($jenis === $j ? 'selected' : ''); ?>><?php echo e($label); ?></option>
+            <option value="<?php echo e($j); ?>" <?php echo e($jenis === $j ? 'selected' : ''); ?>><?php echo e(ucfirst($j)); ?></option>
           <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        <?php else: ?>
-          <option value="motor"   <?php echo e($jenis==='motor'?'selected':''); ?>>Motor</option>
-          <option value="mobil"   <?php echo e($jenis==='mobil'?'selected':''); ?>>Mobil</option>
-          <option value="lainnya" <?php echo e($jenis==='lainnya'?'selected':''); ?>>Truk</option>
         <?php endif; ?>
       </select>
       <select name="sort" onchange="this.form.submit()" style="min-width:120px">
@@ -62,7 +55,7 @@
     <?php
       $kj = $t->kendaraan->jenis_kendaraan ?? '';
       $jc = ($jenisColors[$kj] ?? 'p-blu');
-      $jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '');
+      $jl = $kj ? ucfirst($kj) : '—';
       $sc = $t->status === 'masuk' ? 'p-grn' : 'p-blu';
     ?>
     <tr>

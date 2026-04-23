@@ -3,7 +3,6 @@
 <?php $__env->startSection('page-sub', ($area ? $area->nama_area . ' · ' : '') . $subLabel); ?>
 
 <?php $__env->startSection('topbar-right'); ?>
-
 <div style="display:flex;background:var(--s2);border:1px solid var(--b2);border-radius:8px;overflow:hidden">
     <?php $__currentLoopData = ['harian'=>'Harian','bulanan'=>'Bulanan','tahunan'=>'Tahunan','custom'=>'Custom']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k => $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <a href="<?php echo e(request()->fullUrlWithQuery(['filter' => $k])); ?>"
@@ -28,7 +27,6 @@
 
 <?php $__env->startSection('content'); ?>
 
-
 <?php if($filter === 'custom'): ?>
 <div class="panel" style="margin-bottom:16px">
     <form method="GET" style="padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
@@ -45,7 +43,6 @@
     </form>
 </div>
 <?php endif; ?>
-
 
 <div class="stats">
     <div class="sc" style="--acc:var(--grn)">
@@ -70,14 +67,12 @@
     </div>
 </div>
 
-
 <div class="panel">
     <div class="ph">
         <div class="pt" style="color:var(--pur)">
             <?php echo $__env->make('layouts._icon', ['name' => 'chart'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             Data Rekap Transaksi
         </div>
-        
         <?php if($area): ?>
         <div style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;
                     padding:3px 10px;border-radius:6px;background:rgba(204,68,255,.1);
@@ -92,14 +87,11 @@
         <?php endif; ?>
     </div>
 
-    
     <div style="padding:18px 20px">
 
-        
         <div style="display:flex;align-items:flex-start;justify-content:space-between;
                     gap:14px;margin-bottom:16px;flex-wrap:wrap">
 
-            
             <div style="flex:1;min-width:200px">
                 <div style="font-size:30px;font-weight:800;letter-spacing:-1.5px;
                             color:var(--grn);line-height:1">
@@ -109,10 +101,13 @@
                 <div style="font-size:11px;color:var(--gray2);margin-top:4px">
                     Total pendapatan · 12 hari terakhir
                 </div>
-                
+
                 <div style="display:flex;gap:14px;margin-top:10px">
                     <div style="display:flex;align-items:center;gap:5px">
-                        <div style="width:8px;height:8px;border-radius:50%;background:var(--grn)"></div>
+                        <svg width="22" height="8" viewBox="0 0 22 8">
+                            <line x1="0" y1="4" x2="22" y2="4" stroke="#89E900" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="11" cy="4" r="2.5" fill="#89E900"/>
+                        </svg>
                         <span style="font-size:10px;color:var(--gray2)">Hari ini</span>
                         <span style="font-size:11px;font-weight:700;color:var(--grn)">
                             <?php echo e('Rp ' . number_format($revHariIni, 0, ',', '.')); ?>
@@ -120,7 +115,11 @@
                         </span>
                     </div>
                     <div style="display:flex;align-items:center;gap:5px">
-                        <div style="width:8px;height:8px;border-radius:50%;background:var(--pur);opacity:.5"></div>
+                        <svg width="22" height="8" viewBox="0 0 22 8">
+                            <line x1="0" y1="4" x2="22" y2="4" stroke="#cc44ff"
+                                  stroke-width="1.5" stroke-dasharray="4 3"
+                                  stroke-linecap="round" opacity="0.7"/>
+                        </svg>
                         <span style="font-size:10px;color:var(--gray2)">Kemarin</span>
                         <span style="font-size:11px;font-weight:700;color:var(--gray)">
                             <?php echo e('Rp ' . number_format($revKemarin, 0, ',', '.')); ?>
@@ -130,42 +129,45 @@
                 </div>
             </div>
 
-            
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex-shrink:0;width:220px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+                        flex-shrink:0;width:220px">
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
                     <div style="font-size:16px;font-weight:800;color:var(--pur)"><?php echo e($totalKend); ?></div>
-                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Kend.</div>
+                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;
+                                text-transform:uppercase;letter-spacing:.5px">Kend.</div>
                 </div>
                 <?php if($area): ?>
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
                     <div style="font-size:16px;font-weight:800;color:var(--ora)"><?php echo e($area->okupansi); ?>%</div>
-                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Okupansi</div>
+                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;
+                                text-transform:uppercase;letter-spacing:.5px">Okupansi</div>
                 </div>
                 <?php else: ?>
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
                     <div style="font-size:16px;font-weight:800;color:var(--ora)"><?php echo e($totalArea); ?></div>
-                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Area</div>
+                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;
+                                text-transform:uppercase;letter-spacing:.5px">Area</div>
                 </div>
                 <?php endif; ?>
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
                     <div style="font-size:16px;font-weight:800;color:var(--blu)"><?php echo e($sedangParkir); ?></div>
-                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Aktif</div>
+                    <div style="font-size:9px;color:var(--gray2);margin-top:3px;
+                                text-transform:uppercase;letter-spacing:.5px">Aktif</div>
                 </div>
             </div>
         </div>
 
-        
         <div style="position:relative;height:80px;margin-bottom:6px">
             <svg id="rekap_chart" viewBox="0 0 480 80" preserveAspectRatio="none"
                  style="display:block;width:100%;height:80px">
                 <defs>
                     <linearGradient id="gradHari" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#89E900" stop-opacity="0.3"/>
+                        <stop offset="0%"   stop-color="#89E900" stop-opacity="0.3"/>
                         <stop offset="100%" stop-color="#89E900" stop-opacity="0.02"/>
                     </linearGradient>
                     <linearGradient id="gradKem" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#cc44ff" stop-opacity="0.2"/>
-                        <stop offset="100%" stop-color="#cc44ff" stop-opacity="0.02"/>
+                        <stop offset="0%"   stop-color="#cc44ff" stop-opacity="0.15"/>
+                        <stop offset="100%" stop-color="#cc44ff" stop-opacity="0.01"/>
                     </linearGradient>
                 </defs>
                 
@@ -175,54 +177,52 @@
                 
             </svg>
         </div>
-
-        
-        <div id="chart_dates" style="display:flex;justify-content:space-between;padding:0 2px;margin-bottom:0"></div>
+        <div id="chart_dates" style="display:flex;justify-content:space-between;padding:0 2px"></div>
     </div>
 
-    
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bdr);
-                border-top:1px solid var(--bdr)">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+                background:var(--bdr);border-top:1px solid var(--bdr)">
         <div style="background:var(--card);padding:12px 16px;text-align:center">
             <div style="font-size:15px;font-weight:800;color:var(--grn)">
                 <?php echo e('Rp ' . number_format($totalRev, 0, ',', '.')); ?>
 
             </div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px">Pendapatan</div>
+            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
+                        text-transform:uppercase;letter-spacing:.5px">Pendapatan</div>
         </div>
         <div style="background:var(--card);padding:12px 16px;text-align:center">
             <div style="font-size:15px;font-weight:800;color:var(--pur)"><?php echo e($totalKend); ?></div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px">Kendaraan</div>
+            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
+                        text-transform:uppercase;letter-spacing:.5px">Kendaraan</div>
         </div>
         <div style="background:var(--card);padding:12px 16px;text-align:center">
             <div style="font-size:15px;font-weight:800;color:var(--ora)">
                 <?php echo e('Rp ' . number_format($avgBiaya, 0, ',', '.')); ?>
 
             </div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px">Rata-rata</div>
+            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
+                        text-transform:uppercase;letter-spacing:.5px">Rata-rata</div>
         </div>
         <div style="background:var(--card);padding:12px 16px;text-align:center">
             <div style="font-size:15px;font-weight:800;color:var(--blu)"><?php echo e($sedangParkir); ?></div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px">Aktif Parkir</div>
+            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
+                        text-transform:uppercase;letter-spacing:.5px">Aktif Parkir</div>
         </div>
     </div>
 </div>
 
-
 <div class="panel">
     <form method="GET">
-        <input type="hidden" name="filter" value="<?php echo e($filter); ?>">
-        <input type="hidden" name="dari"   value="<?php echo e($df->format('Y-m-d')); ?>">
-        <input type="hidden" name="sampai" value="<?php echo e($dt->format('Y-m-d')); ?>">
+        <input type="hidden" name="filter"  value="<?php echo e($filter); ?>">
+        <input type="hidden" name="dari"    value="<?php echo e($df->format('Y-m-d')); ?>">
+        <input type="hidden" name="sampai"  value="<?php echo e($dt->format('Y-m-d')); ?>">
 
         <div style="padding:12px 20px;display:flex;gap:12px;align-items:flex-end;
                     flex-wrap:wrap;border-bottom:1px solid var(--bdr)">
 
-            
             <div style="display:flex;flex-direction:column;gap:4px">
                 <span style="font-size:10px;color:var(--gray2);text-transform:uppercase;letter-spacing:.8px">Area</span>
                 <?php if($area): ?>
-                
                 <div style="background:var(--s2);border:1px solid rgba(204,68,255,.35);border-radius:8px;
                             padding:8px 12px;font-size:12px;color:var(--pur);font-weight:700;
                             display:flex;align-items:center;gap:6px;white-space:nowrap">
@@ -234,7 +234,6 @@
 
                 </div>
                 <?php else: ?>
-                
                 <select name="area" onchange="this.form.submit()"
                         style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                                padding:8px 12px;color:var(--wht);font-size:12px;outline:none;min-width:160px">
@@ -257,13 +256,8 @@
                     <option value="">Semua Jenis</option>
                     <?php if(isset($jenisList) && count($jenisList)): ?>
                         <?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <?php $label = $j === 'lainnya' ? 'Truk / Lainnya' : ucfirst($j); ?>
-                            <option value="<?php echo e($j); ?>" <?php echo e($fj === $j ? 'selected' : ''); ?>><?php echo e($label); ?></option>
+                            <option value="<?php echo e($j); ?>" <?php echo e($fj === $j ? 'selected' : ''); ?>><?php echo e(ucfirst($j)); ?></option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    <?php else: ?>
-                        <option value="motor"   <?php echo e($fj === 'motor'   ? 'selected' : ''); ?>>Motor</option>
-                        <option value="mobil"   <?php echo e($fj === 'mobil'   ? 'selected' : ''); ?>>Mobil</option>
-                        <option value="lainnya" <?php echo e($fj === 'lainnya' ? 'selected' : ''); ?>>Truk / Lainnya</option>
                     <?php endif; ?>
                 </select>
             </div>
@@ -273,8 +267,8 @@
                 <select name="sort" onchange="this.form.submit()"
                         style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                                padding:8px 12px;color:var(--wht);font-size:12px;outline:none;min-width:130px">
-                    <option value="waktu_masuk"  <?php echo e($fsort === 'waktu_masuk'  ? 'selected' : ''); ?>>Terbaru</option>
-                    <option value="biaya_total"  <?php echo e($fsort === 'biaya_total'  ? 'selected' : ''); ?>>Total Biaya</option>
+                    <option value="waktu_masuk" <?php echo e($fsort === 'waktu_masuk' ? 'selected' : ''); ?>>Terbaru</option>
+                    <option value="biaya_total" <?php echo e($fsort === 'biaya_total' ? 'selected' : ''); ?>>Total Biaya</option>
                 </select>
             </div>
 
@@ -284,19 +278,12 @@
         </div>
     </form>
 
-    
     <table class="tbl">
         <thead>
             <tr>
-                <th>ID Transaksi</th>
-                <th>Tanggal</th>
-                <th>Plat Nomor</th>
-                <th>Jenis</th>
-                <th>Area</th>
-                <th>Masuk</th>
-                <th>Keluar</th>
-                <th>Durasi</th>
-                <th>Total</th>
+                <th>ID Transaksi</th><th>Tanggal</th><th>Plat Nomor</th>
+                <th>Jenis</th><th>Area</th><th>Masuk</th>
+                <th>Keluar</th><th>Durasi</th><th>Total</th>
             </tr>
         </thead>
         <tbody>
@@ -304,7 +291,7 @@
         <?php
             $kj = $t->kendaraan->jenis_kendaraan ?? '';
             $jc = $jenisColors[$kj] ?? 'p-blu';
-            $jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '—');
+            $jl = $kj ? ucfirst($kj) : '—';
         ?>
         <tr>
             <td class="t-gray" style="font-size:11px">
@@ -330,7 +317,6 @@
         </tbody>
     </table>
 
-    
     <div class="pager">
         <span class="pager-info">
             Menampilkan <?php echo e($rekap->firstItem() ?? 0); ?> - <?php echo e($rekap->lastItem() ?? 0); ?>
@@ -343,18 +329,15 @@
             <?php else: ?>
                 <a href="<?php echo e($rekap->previousPageUrl()); ?>" class="pb">&#8249;</a>
             <?php endif; ?>
-
             <?php $__currentLoopData = $rekap->getUrlRange(
                 max(1, $rekap->currentPage() - 2),
                 min($rekap->lastPage(), $rekap->currentPage() + 2)
             ); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $page => $url): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <a href="<?php echo e($url); ?>"
-                   class="pb <?php echo e($page === $rekap->currentPage() ? 'act' : ''); ?>">
+                <a href="<?php echo e($url); ?>" class="pb <?php echo e($page === $rekap->currentPage() ? 'act' : ''); ?>">
                     <?php echo e($page); ?>
 
                 </a>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-
             <?php if($rekap->hasMorePages()): ?>
                 <a href="<?php echo e($rekap->nextPageUrl()); ?>" class="pb">&#8250;</a>
             <?php else: ?>
@@ -368,89 +351,87 @@
 
 <?php $__env->startPush('scripts'); ?>
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+const chartHariIni = <?php echo json_encode($chart, 15, 512) ?>;        
+const chartKemarin = <?php echo json_encode($chartKemarin, 15, 512) ?>;  
+const chartMax     = <?php echo e($chartMax); ?>;        
 
-const chartData = <?php echo json_encode($chart, 15, 512) ?>;       // [{date, day, val}, ...]
-const chartMax  = <?php echo e($chartMax); ?>;
+const svg  = document.getElementById('rekap_chart');
+const dRow = document.getElementById('chart_dates');
 
-const svg   = document.getElementById('rekap_chart');
-const dRow  = document.getElementById('chart_dates');
-const W     = 480;
-const H     = 80;
-const PAD   = 4;
+if (!svg) return;
 
-if (chartData && chartData.length) {
-    const n     = chartData.length;
-    const step  = (W - PAD * 2) / (n - 1);
-
-    // Konversi ke koordinat SVG (y dari BAWAH)
-    const pts = chartData.map((d, i) => ({
-        x : PAD + i * step,
-        y : chartMax > 0 ? H - PAD - ((d.val / chartMax) * (H - PAD * 2)) : H - PAD,
-        v : d.val,
-        day: d.day,
-    }));
-
-    // ── Smooth bezier path helper ──────────────────
-    function bezierPath(points) {
-        if (points.length < 2) return '';
-        let d = `M ${points[0].x},${points[0].y}`;
-        for (let i = 0; i < points.length - 1; i++) {
-            const cp1x = points[i].x + (points[i+1].x - points[i].x) * 0.45;
-            const cp1y = points[i].y;
-            const cp2x = points[i+1].x - (points[i+1].x - points[i].x) * 0.45;
-            const cp2y = points[i+1].y;
-            d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${points[i+1].x},${points[i+1].y}`;
-        }
-        return d;
-    }
-
-    const linePath = bezierPath(pts);
-    const last     = pts[pts.length - 1];
-    const first    = pts[0];
-
-    // ── Area fill ──────────────────────────────────
-    const areaPath = `${linePath} L ${last.x},${H} L ${first.x},${H} Z`;
-    const areEl = document.createElementNS('http://www.w3.org/2000/svg','path');
-    areEl.setAttribute('d', areaPath);
-    areEl.setAttribute('fill', 'url(#gradHari)');
-    svg.appendChild(areEl);
-
-    // ── Line ──────────────────────────────────────
-    const lineEl = document.createElementNS('http://www.w3.org/2000/svg','path');
-    lineEl.setAttribute('d', linePath);
-    lineEl.setAttribute('fill', 'none');
-    lineEl.setAttribute('stroke', '#89E900');
-    lineEl.setAttribute('stroke-width', '1.8');
-    lineEl.setAttribute('stroke-linecap', 'round');
-    svg.appendChild(lineEl);
-
-    // ── Endpoint dot (hari ini) ───────────────────
-    const dotEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    dotEl.setAttribute('cx', last.x);
-    dotEl.setAttribute('cy', last.y);
-    dotEl.setAttribute('r', '3.5');
-    dotEl.setAttribute('fill', '#89E900');
-    svg.appendChild(dotEl);
-
-    // ── Hover dots (invisible, show on hover) ─────
-    pts.forEach((p, i) => {
-        const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-        c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
-        c.setAttribute('r', '3'); c.setAttribute('fill', '#89E900');
-        c.setAttribute('opacity', i === n-1 ? '0' : '0'); // already shown above for last
-        c.style.cursor = 'pointer';
-        svg.appendChild(c);
-    });
-
-    // ── Date labels ───────────────────────────────
-    pts.forEach((p, i) => {
-        const s = document.createElement('span');
-        s.textContent = p.day;
-        s.style.cssText = `flex:1;text-align:center;font-size:9px;
-            color:${i === n-1 ? '#89E900' : '#333'}`;
-        dRow.appendChild(s);
-    });
+const W   = 480;
+const H   = 80;
+const PAD = 4;
+// allow rendering when either series exists
+const n = (chartHariIni.length || chartKemarin.length || 0);
+if (n === 0) {
+    // no data — render placeholders
+    dRow.innerHTML = Array.from({length:12}).map(() => '<span style="flex:1;text-align:center;font-size:9px;color:#666">-</span>').join('');
+    return;
 }
+
+function xOf(i) {
+    return PAD + i * ((W - PAD * 2) / (n - 1));
+}
+
+function yOf(val) {
+    if (chartMax <= 0) return H - PAD;
+    return H - PAD - (val / chartMax) * (H - PAD * 2);
+}
+
+function makePath(points) {
+    if (points.length < 2) return '';
+    let d = `M ${points[0].x},${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+        const tensionX = (points[i+1].x - points[i].x) * 0.45;
+        const cp1x = points[i].x   + tensionX;
+        const cp1y = points[i].y;
+        const cp2x = points[i+1].x - tensionX;
+        const cp2y = points[i+1].y;
+        d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${points[i+1].x},${points[i+1].y}`;
+    }
+    return d;
+}
+
+function svgEl(tag, attrs) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+}
+
+const ptsHari = chartHariIni.map((d, i) => ({ x: xOf(i), y: yOf(d.val) }));
+const ptsKem  = chartKemarin.map((d, i) => ({ x: xOf(i), y: yOf(d.val) }));
+
+const lineHari = makePath(ptsHari);
+const lineKem  = makePath(ptsKem);
+
+function safeAppendAreaAndLine(pts, line, fill, stroke, opts = {}){
+    if (!pts || pts.length < 1) return;
+    if (pts.length >= 2) {
+        const area = `${line} L ${pts[pts.length-1].x},${H} L ${pts[0].x},${H} Z`;
+        svg.appendChild(svgEl('path', { d: area, fill: fill }));
+        svg.appendChild(svgEl('path', Object.assign({ d: line, fill: 'none', stroke: stroke, 'stroke-linecap': 'round' }, opts)));
+    } else {
+        const p = pts[0];
+        svg.appendChild(svgEl('rect', { x: p.x-1, y: p.y, width: 2, height: H - p.y, fill: fill }));
+        svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: opts.dotR || '2.5', fill: stroke, opacity: opts.opacity || '1' }));
+    }
+}
+
+safeAppendAreaAndLine(ptsKem, lineKem, 'url(#gradKem)', '#cc44ff', { 'stroke-width': '1.5', 'stroke-dasharray': '5 3', opacity: '0.7', dotR: '2.5' });
+
+safeAppendAreaAndLine(ptsHari, lineHari, 'url(#gradHari)', '#89E900', { 'stroke-width': '1.8', opacity: '1', dotR: '3.5' });
+
+for (let i = 0; i < n; i++){
+    const day = chartHariIni[i]?.day ?? chartKemarin[i]?.day ?? '';
+    const s = document.createElement('span');
+    s.textContent = day;
+    s.style.cssText = `flex:1;text-align:center;font-size:9px;color:${i === n - 1 ? '#89E900' : '#333'}`;
+    dRow.appendChild(s);
+}
+});
 </script>
 <?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\park-in\resources\views/owner/rekap.blade.php ENDPATH**/ ?>

@@ -14,17 +14,14 @@ class RekapController extends Controller
 {
     public function index(Request $request)
     {
-        $area   = auth()->user()->area; 
-        $areaId = $area?->id_area; 
+        $area   = auth()->user()->area;
+        $areaId = $area?->id_area;
 
         $filter = $request->input('filter', 'harian');
-
-        $fa = $areaId ?? (int) $request->input('area', 0);
-
+        $fa     = $areaId ?? (int) $request->input('area', 0);
         $fj     = $request->input('jenis', '');
         $fsort  = in_array($request->input('sort'), ['waktu_masuk', 'biaya_total'])
-                    ? $request->input('sort')
-                    : 'waktu_masuk';
+                    ? $request->input('sort') : 'waktu_masuk';
         $forder = $request->input('order', 'desc') === 'asc' ? 'asc' : 'desc';
 
         [$df, $dt, $subLabel] = match($filter) {
@@ -38,7 +35,7 @@ class RekapController extends Controller
                     . ' s/d '
                     . Carbon::parse($request->input('sampai', now()->endOfMonth()))->format('d M Y'),
             ],
-            default   => [today(), today(), 'Menampilkan data hari ini'],
+            default => [today(), today(), 'Menampilkan data hari ini'],
         };
 
         $query = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
@@ -49,6 +46,36 @@ class RekapController extends Controller
             ->orderBy($fsort, $forder);
 
         $rekap = $query->paginate(11)->withQueryString();
+
+        if ($request->input('export')) {
+            $exportRows = (clone $query)->get();
+            $filename   = 'rekap_transaksi_' . now()->format('Ymd') . '.csv';
+            $headers    = [
+                'Content-Type'        => 'text/csv;charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ];
+
+            $callback = function () use ($exportRows) {
+                $f = fopen('php://output', 'w');
+                fputcsv($f, ['ID Transaksi','Tanggal','Plat Nomor','Jenis','Area','Masuk','Keluar','Durasi','Total']);
+                foreach ($exportRows as $t) {
+                    fputcsv($f, [
+                        'TRX-' . str_pad($t->id_parkir, 4, '0', STR_PAD_LEFT),
+                        $t->waktu_masuk?->format('d M Y') ?? '-',
+                        $t->kendaraan->plat_nomor ?? '-',
+                        $t->kendaraan->jenis_kendaraan ? ucfirst($t->kendaraan->jenis_kendaraan) : '-',
+                        $t->area->nama_area ?? '-',
+                        $t->waktu_masuk?->format('Y-m-d H:i:s') ?? '-',
+                        $t->waktu_keluar?->format('Y-m-d H:i:s') ?? '-',
+                        $t->durasiLabel ?? '-',
+                        $t->biaya_total ?? 0,
+                    ]);
+                }
+                fclose($f);
+            };
+
+            return response()->stream($callback, 200, $headers);
+        }
 
         $statsQ = TbTransaksi::whereBetween(DB::raw('DATE(waktu_masuk)'), [$df->format('Y-m-d'), $dt->format('Y-m-d')])
             ->where('status', 'keluar')
@@ -91,12 +118,12 @@ class RekapController extends Controller
                 DB::raw('DATE(waktu_masuk) as tgl'),
                 DB::raw('SUM(biaya_total) as tot')
             )
-            ->whereBetween(
-                DB::raw('DATE(waktu_masuk)'),
-                [now()->subDays(11)->format('Y-m-d'), now()->format('Y-m-d')]
-            )
+            ->whereBetween(DB::raw('DATE(waktu_masuk)'), [
+                now()->subDays(11)->format('Y-m-d'),
+                now()->format('Y-m-d'),
+            ])
             ->where('status', 'keluar')
-            ->when($fa, fn($q) => $q->where('id_area', $fa)) // ← filter area owner
+            ->when($fa, fn($q) => $q->where('id_area', $fa))
             ->groupBy('tgl')
             ->orderBy('tgl')
             ->pluck('tot', 'tgl');
@@ -110,7 +137,36 @@ class RekapController extends Controller
                 'val'  => (float) ($chartRaw[$d] ?? 0),
             ];
         }
-        $chartMax = max(1, max(array_column($chart, 'val')));
+
+        $chartRawPrev = TbTransaksi::select(
+                DB::raw('DATE(waktu_masuk) as tgl'),
+                DB::raw('SUM(biaya_total) as tot')
+            )
+            ->whereBetween(DB::raw('DATE(waktu_masuk)'), [
+                now()->subDays(13)->format('Y-m-d'), 
+                now()->subDays(1)->format('Y-m-d'),  
+            ])
+            ->where('status', 'keluar')
+            ->when($fa, fn($q) => $q->where('id_area', $fa))
+            ->groupBy('tgl')
+            ->orderBy('tgl')
+            ->pluck('tot', 'tgl');
+
+        $chartKemarin = [];
+        foreach ($chart as $c) {
+            $dprev          = Carbon::parse($c['date'])->subDay()->format('Y-m-d');
+            $chartKemarin[] = [
+                'date' => $dprev,
+                'day'  => Carbon::parse($dprev)->format('d'),
+                'val'  => (float) ($chartRawPrev[$dprev] ?? 0),
+            ];
+        }
+
+        $valsHari = array_column($chart, 'val');
+        $valsKem  = array_column($chartKemarin, 'val');
+
+        $allVals  = array_filter(array_merge($valsHari, $valsKem), fn($v) => $v > 0);
+        $chartMax = count($allVals) > 0 ? (float) max($allVals) : 1;
 
         $areaList = TbAreaParkir::orderBy('nama_area')->get();
 
@@ -118,19 +174,12 @@ class RekapController extends Controller
 
         return view('owner.rekap', compact(
             'rekap',
-
             'filter', 'df', 'dt', 'subLabel',
             'fa', 'fj', 'fsort', 'forder',
-
             'totalRev', 'totalKend', 'avgBiaya',
-            'sedangParkir',   
-            'revHariIni',     
-            'revKemarin',     
-            'totalArea',      
-
-            'area',           
-            'areaList',
-            'chart', 'chartMax',
+            'sedangParkir', 'revHariIni', 'revKemarin', 'totalArea',
+            'area', 'areaList',
+            'chart', 'chartKemarin', 'chartMax',
             'topArea', 'perArea'
         ));
     }

@@ -32,15 +32,8 @@
         <option value="">Semua Jenis</option>
         @if(isset($jenisList) && count($jenisList))
           @foreach($jenisList as $j)
-            @php
-              $label = $j === 'lainnya' ? 'Truk' : ucfirst($j);
-            @endphp
-            <option value="{{ $j }}" {{ $jenis === $j ? 'selected' : '' }}>{{ $label }}</option>
+            <option value="{{ $j }}" {{ $jenis === $j ? 'selected' : '' }}>{{ ucfirst($j) }}</option>
           @endforeach
-        @else
-          <option value="motor"   {{ $jenis==='motor'?'selected':'' }}>Motor</option>
-          <option value="mobil"   {{ $jenis==='mobil'?'selected':'' }}>Mobil</option>
-          <option value="lainnya" {{ $jenis==='lainnya'?'selected':'' }}>Truk</option>
         @endif
       </select>
       <select name="sort" onchange="this.form.submit()" style="min-width:120px">
@@ -63,7 +56,7 @@
     @php
       $kj = $t->kendaraan->jenis_kendaraan ?? '';
       $jc = ($jenisColors[$kj] ?? 'p-blu');
-      $jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '');
+      $jl = $kj ? ucfirst($kj) : '—';
       $sc = $t->status === 'masuk' ? 'p-grn' : 'p-blu';
     @endphp
     <tr>
