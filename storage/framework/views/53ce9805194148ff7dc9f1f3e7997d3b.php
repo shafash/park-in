@@ -79,10 +79,20 @@
           <div class="tbl-acts">
             <button class="btn btn-out btn-xs" onclick="openEdit(<?php echo e($u->id_user); ?>,'<?php echo e(addslashes($u->nama_lengkap)); ?>','<?php echo e($u->role); ?>',<?php echo e($u->status_aktif); ?>,<?php echo e($u->id_area ?? 'null'); ?>)">Edit</button>
             <?php if($u->id_user !== auth()->id() && $u->role !== 'admin'): ?>
-            <form method="POST" action="<?php echo e(route('admin.registrasi.destroy', $u->id_user)); ?>" style="display:inline" onsubmit="return confirm('Hapus user ini?')">
+            <form id="form-hapus-user-<?php echo e($u->id_user); ?>" method="POST"
+                  action="<?php echo e(route('admin.registrasi.destroy', $u->id_user)); ?>"
+                  style="display:none">
               <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
-              <button type="submit" class="btn btn-red btn-xs">Delete</button>
             </form>
+
+            <button type="button"
+                    data-modal="hapus"
+                    data-form-id="form-hapus-user-<?php echo e($u->id_user); ?>"
+                    data-label="User"
+                    data-nama="<?php echo e($u->nama_lengkap); ?> (<?php echo e($u->username); ?>)"
+                    class="btn btn-red btn-xs">
+              Delete
+            </button>
             <?php endif; ?>
           </div>
         </td>

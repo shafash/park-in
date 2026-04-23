@@ -64,10 +64,21 @@
       <td>
         <div class="tbl-acts">
           <button class="btn btn-out btn-xs" onclick="openEdit(<?php echo e($k->id_kendaraan); ?>,'<?php echo e(addslashes($k->plat_nomor)); ?>','<?php echo e($k->jenis_kendaraan); ?>','<?php echo e(addslashes($k->merek)); ?>','<?php echo e(addslashes($k->warna)); ?>','<?php echo e(addslashes($k->pemilik)); ?>','<?php echo e($k->foto); ?>')">Edit</button>
-          <form method="POST" action="<?php echo e(route('admin.kendaraan.destroy',$k->id_kendaraan)); ?>" style="display:inline" onsubmit="return confirm('Hapus kendaraan ini?')">
+          <form id="form-hapus-kend-<?php echo e($k->id_kendaraan); ?>" method="POST"
+                action="<?php echo e(route('admin.kendaraan.destroy', $k->id_kendaraan)); ?>"
+                style="display:none">
             <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
-            <button type="submit" class="btn btn-red btn-xs">Delete</button>
           </form>
+
+          <button type="button"
+                  data-modal="hapus"
+                  data-form-id="form-hapus-kend-<?php echo e($k->id_kendaraan); ?>"
+                  data-label="Kendaraan"
+                  data-nama="<?php echo e($k->plat_nomor); ?><?php echo e($k->merek ? ' · '.$k->merek : ''); ?>"
+                  data-warn="Kendaraan tidak bisa dihapus jika ada riwayat transaksi."
+                  class="btn btn-red btn-xs">
+            Delete
+          </button>
         </div>
       </td>
     </tr>

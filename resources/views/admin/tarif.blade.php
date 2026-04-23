@@ -30,10 +30,21 @@
       <td>
         <div class="tbl-acts">
           <button class="btn btn-out btn-xs" onclick="openEdit({{ $t->id_tarif }},'{{ $t->jenis_kendaraan }}',{{ $t->tarif_awal ?? 0 }},{{ $t->tarif_per_jam }},{{ $t->tarif_maks_per_hari ?? 0 }})">Edit</button>
-          <form method="POST" action="{{ route('admin.tarif.destroy',$t->id_tarif) }}" style="display:inline" onsubmit="return confirm('Hapus tarif ini?')">
+          <form id="form-hapus-tarif-{{ $t->id_tarif }}" method="POST"
+                action="{{ route('admin.tarif.destroy', $t->id_tarif) }}"
+                style="display:none">
             @csrf @method('DELETE')
-            <button type="submit" class="btn btn-red btn-xs">Delete</button>
           </form>
+
+          <button type="button"
+                  data-modal="hapus"
+                  data-form-id="form-hapus-tarif-{{ $t->id_tarif }}"
+                  data-label="Tarif"
+                  data-nama="{{ ucfirst($t->jenis_kendaraan) }} — {{ $t->rupiah }}/jam"
+                  data-warn="Hapus hanya jika tarif belum dipakai dalam transaksi."
+                  class="btn btn-red btn-xs">
+            Delete
+          </button>
         </div>
       </td>
     </tr>

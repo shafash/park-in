@@ -30,11 +30,22 @@
       <td>
         <div class="tbl-acts">
           <button class="btn btn-out btn-xs" onclick="openEdit({{ $a->id_area }},'{{ addslashes($a->nama_area) }}','{{ addslashes($a->alamat) }}',{{ $a->kapasitas }},{{ $a->status }})">Edit</button>
-          <form method="POST" action="{{ route('admin.area.destroy',$a->id_area) }}" style="display:inline" onsubmit="return confirm('Hapus area ini?')">
+          <form id="form-hapus-area-{{ $a->id_area }}" method="POST"
+                action="{{ route('admin.area.destroy', $a->id_area) }}"
+                style="display:none">
             @csrf @method('DELETE')
-            <button type="submit" class="btn btn-red btn-xs">Delete</button>
           </form>
-        </div>
+
+          <button type="button"
+                  data-modal="hapus"
+                  data-form-id="form-hapus-area-{{ $a->id_area }}"
+                  data-label="Area Parkir"
+                  data-nama="{{ $a->nama_area }}"
+                  data-warn="Area tidak bisa dihapus jika masih ada transaksi terkait."
+                  class="btn btn-red btn-xs">
+            Delete
+          </button>
+                  </div>
       </td>
     </tr>
     @empty

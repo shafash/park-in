@@ -78,10 +78,20 @@
           <div class="tbl-acts">
             <button class="btn btn-out btn-xs" onclick="openEdit({{ $u->id_user }},'{{ addslashes($u->nama_lengkap) }}','{{ $u->role }}',{{ $u->status_aktif }},{{ $u->id_area ?? 'null' }})">Edit</button>
             @if($u->id_user !== auth()->id() && $u->role !== 'admin')
-            <form method="POST" action="{{ route('admin.registrasi.destroy', $u->id_user) }}" style="display:inline" onsubmit="return confirm('Hapus user ini?')">
+            <form id="form-hapus-user-{{ $u->id_user }}" method="POST"
+                  action="{{ route('admin.registrasi.destroy', $u->id_user) }}"
+                  style="display:none">
               @csrf @method('DELETE')
-              <button type="submit" class="btn btn-red btn-xs">Delete</button>
             </form>
+
+            <button type="button"
+                    data-modal="hapus"
+                    data-form-id="form-hapus-user-{{ $u->id_user }}"
+                    data-label="User"
+                    data-nama="{{ $u->nama_lengkap }} ({{ $u->username }})"
+                    class="btn btn-red btn-xs">
+              Delete
+            </button>
             @endif
           </div>
         </td>

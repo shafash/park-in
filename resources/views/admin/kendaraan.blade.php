@@ -64,10 +64,21 @@
       <td>
         <div class="tbl-acts">
           <button class="btn btn-out btn-xs" onclick="openEdit({{ $k->id_kendaraan }},'{{ addslashes($k->plat_nomor) }}','{{ $k->jenis_kendaraan }}','{{ addslashes($k->merek) }}','{{ addslashes($k->warna) }}','{{ addslashes($k->pemilik) }}','{{ $k->foto }}')">Edit</button>
-          <form method="POST" action="{{ route('admin.kendaraan.destroy',$k->id_kendaraan) }}" style="display:inline" onsubmit="return confirm('Hapus kendaraan ini?')">
+          <form id="form-hapus-kend-{{ $k->id_kendaraan }}" method="POST"
+                action="{{ route('admin.kendaraan.destroy', $k->id_kendaraan) }}"
+                style="display:none">
             @csrf @method('DELETE')
-            <button type="submit" class="btn btn-red btn-xs">Delete</button>
           </form>
+
+          <button type="button"
+                  data-modal="hapus"
+                  data-form-id="form-hapus-kend-{{ $k->id_kendaraan }}"
+                  data-label="Kendaraan"
+                  data-nama="{{ $k->plat_nomor }}{{ $k->merek ? ' · '.$k->merek : '' }}"
+                  data-warn="Kendaraan tidak bisa dihapus jika ada riwayat transaksi."
+                  class="btn btn-red btn-xs">
+            Delete
+          </button>
         </div>
       </td>
     </tr>

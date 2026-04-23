@@ -29,11 +29,22 @@
       <td>
         <div class="tbl-acts">
           <button class="btn btn-out btn-xs" onclick="openEdit(<?php echo e($a->id_area); ?>,'<?php echo e(addslashes($a->nama_area)); ?>','<?php echo e(addslashes($a->alamat)); ?>',<?php echo e($a->kapasitas); ?>,<?php echo e($a->status); ?>)">Edit</button>
-          <form method="POST" action="<?php echo e(route('admin.area.destroy',$a->id_area)); ?>" style="display:inline" onsubmit="return confirm('Hapus area ini?')">
+          <form id="form-hapus-area-<?php echo e($a->id_area); ?>" method="POST"
+                action="<?php echo e(route('admin.area.destroy', $a->id_area)); ?>"
+                style="display:none">
             <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
-            <button type="submit" class="btn btn-red btn-xs">Delete</button>
           </form>
-        </div>
+
+          <button type="button"
+                  data-modal="hapus"
+                  data-form-id="form-hapus-area-<?php echo e($a->id_area); ?>"
+                  data-label="Area Parkir"
+                  data-nama="<?php echo e($a->nama_area); ?>"
+                  data-warn="Area tidak bisa dihapus jika masih ada transaksi terkait."
+                  class="btn btn-red btn-xs">
+            Delete
+          </button>
+                  </div>
       </td>
     </tr>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
