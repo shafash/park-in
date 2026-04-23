@@ -81,6 +81,12 @@ a{color:inherit;text-decoration:none}
 .p-ora{background:rgba(255,153,0,.15);color:var(--ora);border:1px solid rgba(255,153,0,.4)}
 .p-pur{background:rgba(204,68,255,.15);color:var(--pur);border:1px solid rgba(204,68,255,.4)}
 .p-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* Utility: hide native scrollbar but keep scroll behavior */
+.no-scrollbar{ -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar{ display:none; height:0; width:0; }
 .fg{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .fg label{font-size:13px;font-weight:500;color:var(--wht)}
 .fg input,.fg select,.fg textarea{background:var(--s2);border:1px solid var(--b2);border-radius:9px;padding:11px 14px;color:var(--wht);font-family:var(--sans);font-size:13px;outline:none;width:100%;transition:border-color .15s}

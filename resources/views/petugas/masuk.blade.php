@@ -61,9 +61,9 @@
                  style="text-transform:uppercase;font-size:16px;font-weight:700;letter-spacing:2px">
 
           {{-- Dropdown autocomplete --}}
-          <div id="plat_dd" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:99;
-               background:var(--surf);border:1px solid var(--b2);border-radius:0 0 10px 10px;
-               max-height:220px;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.6)">
+          <div id="plat_dd" class="no-scrollbar" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:99;
+            background:var(--surf);border:1px solid var(--b2);border-radius:0 0 10px 10px;
+            max-height:220px;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.6)">
           </div>
         </div>
 

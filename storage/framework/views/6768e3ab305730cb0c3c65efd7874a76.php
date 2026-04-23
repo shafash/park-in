@@ -54,7 +54,7 @@
       <?php
         $kj = $k->jenis_kendaraan ?? '';
         $k_jc = $jenisColors[$kj] ?? 'p-blu';
-        $k_jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '—');
+        $k_jl = $kj ? ucfirst($kj) : '—';
       ?>
       <td><span class="pill <?php echo e($k_jc); ?>"><?php echo e($k_jl); ?></span></td>
       <td><?php echo e($k->merek ?: '—'); ?></td>
