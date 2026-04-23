@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Courier New',monospace;font-size:12px;background:#fff;color:#111;display:flex;justify-content:center;padding:20px}
-.struk{width:200px;padding:8px}
+.struk{width:280px;padding:20px}
 .title{text-align:center;font-size:16px;font-weight:700;border-bottom:2px dashed #bbb;padding-bottom:10px;margin-bottom:12px}
 .row{display:flex;justify-content:space-between;gap:8px;line-height:1.4}
 .total{border-top:2px dashed #bbb;padding-top:10px;margin-top:8px;display:flex;justify-content:space-between;font-weight:700;font-size:14px}
