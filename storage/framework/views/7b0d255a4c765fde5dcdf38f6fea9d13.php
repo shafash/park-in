@@ -77,7 +77,18 @@
       <td>
         <div class="tbl-acts">
           <?php if($t->status === 'masuk'): ?>
-            <a href="<?php echo e(route('petugas.transaksi.keluar', $t->id_parkir)); ?>" class="btn btn-red btn-xs">Keluar</a>
+            <button type="button"
+                  data-modal="keluar"
+                  data-id="<?php echo e($t->id_parkir); ?>"
+                  data-plat="<?php echo e($t->kendaraan->plat_nomor ?? '—'); ?>"
+                  data-jenis="<?php echo e($t->kendaraan->jenisLabel ?? '—'); ?>"
+                  data-jenis-pill="<?php echo e($t->kendaraan->jenisPill ?? 'p-grn'); ?>"
+                  data-masuk="<?php echo e($t->waktu_masuk->format('H:i')); ?> WIB"
+                  data-durasi="<?php echo e($t->durasiLabel); ?>"
+                  data-est="<?php echo e($t->biaya_total > 0 ? $t->biayaRupiah : 'Dihitung saat keluar'); ?>"
+                  class="btn btn-red btn-xs">
+            Keluar
+          </button>
           <?php else: ?>
             <a href="<?php echo e(route('petugas.struk.show', $t->id_parkir)); ?>" class="btn btn-blu btn-xs">Struk</a>
           <?php endif; ?>

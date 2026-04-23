@@ -78,7 +78,18 @@
       <td>
         <div class="tbl-acts">
           @if($t->status === 'masuk')
-            <a href="{{ route('petugas.transaksi.keluar', $t->id_parkir) }}" class="btn btn-red btn-xs">Keluar</a>
+            <button type="button"
+                  data-modal="keluar"
+                  data-id="{{ $t->id_parkir }}"
+                  data-plat="{{ $t->kendaraan->plat_nomor ?? '—' }}"
+                  data-jenis="{{ $t->kendaraan->jenisLabel ?? '—' }}"
+                  data-jenis-pill="{{ $t->kendaraan->jenisPill ?? 'p-grn' }}"
+                  data-masuk="{{ $t->waktu_masuk->format('H:i') }} WIB"
+                  data-durasi="{{ $t->durasiLabel }}"
+                  data-est="{{ $t->biaya_total > 0 ? $t->biayaRupiah : 'Dihitung saat keluar' }}"
+                  class="btn btn-red btn-xs">
+            Keluar
+          </button>
           @else
             <a href="{{ route('petugas.struk.show', $t->id_parkir) }}" class="btn btn-blu btn-xs">Struk</a>
           @endif

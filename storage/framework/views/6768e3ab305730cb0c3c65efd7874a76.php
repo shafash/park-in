@@ -51,7 +51,12 @@
         <?php endif; ?>
       </td>
       <td class="fw7"><?php echo e($k->plat_nomor); ?></td>
-      <td><span class="pill <?php echo e($k->jenisPill); ?>"><?php echo e($k->jenisLabel); ?></span></td>
+      <?php
+        $kj = $k->jenis_kendaraan ?? '';
+        $k_jc = $jenisColors[$kj] ?? 'p-blu';
+        $k_jl = $kj === 'lainnya' ? 'Truk' : ($kj ? ucfirst($kj) : '—');
+      ?>
+      <td><span class="pill <?php echo e($k_jc); ?>"><?php echo e($k_jl); ?></span></td>
       <td><?php echo e($k->merek ?: '—'); ?></td>
       <td class="t-gray" style="font-size:12px"><?php echo e($k->warna ?: '—'); ?></td>
       <td><?php echo e($k->pemilik ?: '—'); ?></td>
