@@ -1,12 +1,18 @@
 FROM php:8.2-apache
 
-# install extension
-RUN docker-php-ext-install pdo pdo_mysql
+# install dependencies WAJIB
+RUN apt-get update && apt-get install -y \
+    unzip \
+    git \
+    curl \
+    libzip-dev \
+    zip \
+    && docker-php-ext-install zip pdo pdo_mysql
 
-# enable mod rewrite
+# enable rewrite
 RUN a2enmod rewrite
 
-# set document root ke public
+# set public folder
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
@@ -20,6 +26,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# install laravel deps
 RUN composer install --no-dev --optimize-autoloader
 
 # permission
