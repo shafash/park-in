@@ -36,9 +36,6 @@
       </button>
     </form>
 
-    <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--bdr);font-size:11px;color:var(--gray2);text-align:center;line-height:2">
-      admin/admin123 &nbsp;·&nbsp; petugas/petugas123 &nbsp;·&nbsp; owner/owner123
-    </div>
   </div>
 </div>
 </body>
