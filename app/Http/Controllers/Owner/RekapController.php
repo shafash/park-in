@@ -49,14 +49,17 @@ class RekapController extends Controller
 
         if ($request->input('export')) {
             $exportRows = (clone $query)->get();
-            $filename   = 'rekap_transaksi_' . now()->format('Ymd') . '.csv';
+            // stream as Excel-compatible (xls) — simple CSV with Excel MIME and BOM
+            $filename   = 'rekap_transaksi_' . now()->format('Ymd') . '.xls';
             $headers    = [
-                'Content-Type'        => 'text/csv;charset=UTF-8',
+                'Content-Type'        => 'application/vnd.ms-excel; charset=UTF-8',
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ];
 
             $callback = function () use ($exportRows) {
                 $f = fopen('php://output', 'w');
+                // UTF-8 BOM so Excel opens UTF-8 characters correctly
+                fwrite($f, "\xEF\xBB\xBF");
                 fputcsv($f, ['ID Transaksi','Tanggal','Plat Nomor','Jenis','Area','Masuk','Keluar','Durasi','Total']);
                 foreach ($exportRows as $t) {
                     fputcsv($f, [

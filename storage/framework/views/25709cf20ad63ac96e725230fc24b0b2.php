@@ -21,7 +21,7 @@
         <polyline points="7 10 12 15 17 10"/>
         <line x1="12" y1="15" x2="12" y2="3"/>
     </svg>
-    Export
+    Export Excel
 </a>
 <?php $__env->stopSection(); ?>
 
@@ -157,9 +157,9 @@
             </div>
         </div>
 
-        <div style="position:relative;height:80px;margin-bottom:6px">
-            <svg id="rekap_chart" viewBox="0 0 480 80" preserveAspectRatio="none"
-                 style="display:block;width:100%;height:80px">
+        <div style="position:relative;height:120px;margin-bottom:6px">
+            <svg id="rekap_chart" viewBox="0 0 480 120" preserveAspectRatio="none"
+                 style="display:block;width:100%;height:120px">
                 <defs>
                     <linearGradient id="gradHari" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%"   stop-color="#89E900" stop-opacity="0.3"/>
@@ -180,35 +180,7 @@
         <div id="chart_dates" style="display:flex;justify-content:space-between;padding:0 2px"></div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
-                background:var(--bdr);border-top:1px solid var(--bdr)">
-        <div style="background:var(--card);padding:12px 16px;text-align:center">
-            <div style="font-size:15px;font-weight:800;color:var(--grn)">
-                <?php echo e('Rp ' . number_format($totalRev, 0, ',', '.')); ?>
-
-            </div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
-                        text-transform:uppercase;letter-spacing:.5px">Pendapatan</div>
-        </div>
-        <div style="background:var(--card);padding:12px 16px;text-align:center">
-            <div style="font-size:15px;font-weight:800;color:var(--pur)"><?php echo e($totalKend); ?></div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
-                        text-transform:uppercase;letter-spacing:.5px">Kendaraan</div>
-        </div>
-        <div style="background:var(--card);padding:12px 16px;text-align:center">
-            <div style="font-size:15px;font-weight:800;color:var(--ora)">
-                <?php echo e('Rp ' . number_format($avgBiaya, 0, ',', '.')); ?>
-
-            </div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
-                        text-transform:uppercase;letter-spacing:.5px">Rata-rata</div>
-        </div>
-        <div style="background:var(--card);padding:12px 16px;text-align:center">
-            <div style="font-size:15px;font-weight:800;color:var(--blu)"><?php echo e($sedangParkir); ?></div>
-            <div style="font-size:9px;color:var(--gray2);margin-top:4px;
-                        text-transform:uppercase;letter-spacing:.5px">Aktif Parkir</div>
-        </div>
-    </div>
+    <!-- summary below chart removed (already shown above) -->
 </div>
 
 <div class="panel">
@@ -362,8 +334,8 @@ const dRow = document.getElementById('chart_dates');
 if (!svg) return;
 
 const W   = 480;
-const H   = 80;
-const PAD = 4;
+const H   = 120;
+const PAD = 6;
 // allow rendering when either series exists
 const n = (chartHariIni.length || chartKemarin.length || 0);
 if (n === 0) {
@@ -406,8 +378,9 @@ const valsHari = chartHariIni.map(d => d?.val ?? 0);
 const valsKem  = chartKemarin.map(d => d?.val ?? 0);
 
 const slotW = (W - PAD * 2) / n;
-const groupW = Math.max(6, slotW * 0.7);
-const barW = Math.max(4, Math.floor(groupW / 2) - 2);
+// make bars larger: use most of slot and larger min widths
+const groupW = Math.max(18, slotW * 0.9);
+const barW = Math.max(10, Math.floor(groupW / 2) - 2);
 
 for (let i = 0; i < n; i++){
     const xCenter = PAD + i * slotW + slotW / 2;
