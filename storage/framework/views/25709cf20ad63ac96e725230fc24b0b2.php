@@ -1,21 +1,21 @@
-@extends('layouts.app')
-@section('title','Rekap Transaksi')
-@section('page-title','Rekap Transaksi')
-@section('page-sub', ($area ? $area->nama_area . ' · ' : '') . $subLabel)
+<?php $__env->startSection('title','Rekap Transaksi'); ?>
+<?php $__env->startSection('page-title','Rekap Transaksi'); ?>
+<?php $__env->startSection('page-sub', ($area ? $area->nama_area . ' · ' : '') . $subLabel); ?>
 
-@section('topbar-right')
+<?php $__env->startSection('topbar-right'); ?>
 <div style="display:flex;background:var(--s2);border:1px solid var(--b2);border-radius:8px;overflow:hidden">
-    @foreach(['harian'=>'Harian','bulanan'=>'Bulanan','tahunan'=>'Tahunan','custom'=>'Custom'] as $k => $v)
-        <a href="{{ request()->fullUrlWithQuery(['filter' => $k]) }}"
+    <?php $__currentLoopData = ['harian'=>'Harian','bulanan'=>'Bulanan','tahunan'=>'Tahunan','custom'=>'Custom']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k => $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <a href="<?php echo e(request()->fullUrlWithQuery(['filter' => $k])); ?>"
            style="padding:8px 14px;font-size:12px;font-weight:600;white-space:nowrap;text-decoration:none;
-                  color:{{ $filter === $k ? '#111' : 'var(--gray)' }};
-                  background:{{ $filter === $k ? 'var(--pur)' : 'transparent' }};
+                  color:<?php echo e($filter === $k ? '#111' : 'var(--gray)'); ?>;
+                  background:<?php echo e($filter === $k ? 'var(--pur)' : 'transparent'); ?>;
                   transition:all .15s">
-            {{ $v }}
+            <?php echo e($v); ?>
+
         </a>
-    @endforeach
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
-<a href="{{ request()->fullUrlWithQuery(['export' => 1]) }}" class="btn btn-out btn-sm">
+<a href="<?php echo e(request()->fullUrlWithQuery(['export' => 1])); ?>" class="btn btn-out btn-sm">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
         <polyline points="7 10 12 15 17 10"/>
@@ -23,46 +23,46 @@
     </svg>
     Export
 </a>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
-@if($filter === 'custom')
+<?php if($filter === 'custom'): ?>
 <div class="panel" style="margin-bottom:16px">
     <form method="GET" style="padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <input type="hidden" name="filter" value="custom">
         <span style="font-size:12px;color:var(--gray)">Dari:</span>
-        <input type="date" name="dari" value="{{ $df->format('Y-m-d') }}"
+        <input type="date" name="dari" value="<?php echo e($df->format('Y-m-d')); ?>"
                style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                       padding:8px 12px;color:var(--wht);font-size:13px;outline:none">
         <span style="font-size:12px;color:var(--gray)">Sampai:</span>
-        <input type="date" name="sampai" value="{{ $dt->format('Y-m-d') }}"
+        <input type="date" name="sampai" value="<?php echo e($dt->format('Y-m-d')); ?>"
                style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                       padding:8px 12px;color:var(--wht);font-size:13px;outline:none">
         <button type="submit" class="btn btn-grn btn-sm">Tampilkan</button>
     </form>
 </div>
-@endif
+<?php endif; ?>
 
 <div class="stats">
     <div class="sc" style="--acc:var(--grn)">
         <div class="sc-lbl">Total Pendapatan</div>
-        <div class="sc-val" style="font-size:22px">{{ 'Rp ' . number_format($totalRev, 0, ',', '.') }}</div>
-        <div class="sc-sub">{{ $area ? $area->nama_area : 'Semua area' }}</div>
+        <div class="sc-val" style="font-size:22px"><?php echo e('Rp ' . number_format($totalRev, 0, ',', '.')); ?></div>
+        <div class="sc-sub"><?php echo e($area ? $area->nama_area : 'Semua area'); ?></div>
     </div>
     <div class="sc" style="--acc:var(--pur)">
         <div class="sc-lbl">Total Kendaraan</div>
-        <div class="sc-val">{{ $totalKend }}</div>
+        <div class="sc-val"><?php echo e($totalKend); ?></div>
         <div class="sc-sub">Transaksi selesai</div>
     </div>
     <div class="sc" style="--acc:var(--ora)">
         <div class="sc-lbl">Rata-rata / Trx</div>
-        <div class="sc-val" style="font-size:20px">{{ 'Rp ' . number_format($avgBiaya, 0, ',', '.') }}</div>
+        <div class="sc-val" style="font-size:20px"><?php echo e('Rp ' . number_format($avgBiaya, 0, ',', '.')); ?></div>
         <div class="sc-sub">Per kendaraan</div>
     </div>
     <div class="sc" style="--acc:var(--blu)">
         <div class="sc-lbl">Sedang Parkir</div>
-        <div class="sc-val">{{ $sedangParkir }}</div>
+        <div class="sc-val"><?php echo e($sedangParkir); ?></div>
         <div class="sc-sub">Kendaraan aktif</div>
     </div>
 </div>
@@ -70,10 +70,10 @@
 <div class="panel">
     <div class="ph">
         <div class="pt" style="color:var(--pur)">
-            @include('layouts._icon', ['name' => 'chart'])
+            <?php echo $__env->make('layouts._icon', ['name' => 'chart'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             Data Rekap Transaksi
         </div>
-        @if($area)
+        <?php if($area): ?>
         <div style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;
                     padding:3px 10px;border-radius:6px;background:rgba(204,68,255,.1);
                     color:var(--pur);border:1px solid rgba(204,68,255,.2)">
@@ -81,9 +81,10 @@
                 <rect x="3" y="11" width="18" height="11" rx="2"/>
                 <path d="M7 11V7a5 5 0 0110 0v4"/>
             </svg>
-            {{ $area->nama_area }}
+            <?php echo e($area->nama_area); ?>
+
         </div>
-        @endif
+        <?php endif; ?>
     </div>
 
     <div style="padding:18px 20px">
@@ -94,7 +95,8 @@
             <div style="flex:1;min-width:200px">
                 <div style="font-size:30px;font-weight:800;letter-spacing:-1.5px;
                             color:var(--grn);line-height:1">
-                    {{ 'Rp ' . number_format($totalRev, 0, ',', '.') }}
+                    <?php echo e('Rp ' . number_format($totalRev, 0, ',', '.')); ?>
+
                 </div>
                 <div style="font-size:11px;color:var(--gray2);margin-top:4px">
                     Total pendapatan · 12 hari terakhir
@@ -108,7 +110,8 @@
                         </svg>
                         <span style="font-size:10px;color:var(--gray2)">Hari ini</span>
                         <span style="font-size:11px;font-weight:700;color:var(--grn)">
-                            {{ 'Rp ' . number_format($revHariIni, 0, ',', '.') }}
+                            <?php echo e('Rp ' . number_format($revHariIni, 0, ',', '.')); ?>
+
                         </span>
                     </div>
                     <div style="display:flex;align-items:center;gap:5px">
@@ -119,7 +122,8 @@
                         </svg>
                         <span style="font-size:10px;color:var(--gray2)">Kemarin</span>
                         <span style="font-size:11px;font-weight:700;color:var(--gray)">
-                            {{ 'Rp ' . number_format($revKemarin, 0, ',', '.') }}
+                            <?php echo e('Rp ' . number_format($revKemarin, 0, ',', '.')); ?>
+
                         </span>
                     </div>
                 </div>
@@ -128,25 +132,25 @@
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
                         flex-shrink:0;width:220px">
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
-                    <div style="font-size:16px;font-weight:800;color:var(--pur)">{{ $totalKend }}</div>
+                    <div style="font-size:16px;font-weight:800;color:var(--pur)"><?php echo e($totalKend); ?></div>
                     <div style="font-size:9px;color:var(--gray2);margin-top:3px;
                                 text-transform:uppercase;letter-spacing:.5px">Kend.</div>
                 </div>
-                @if($area)
+                <?php if($area): ?>
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
-                    <div style="font-size:16px;font-weight:800;color:var(--ora)">{{ $area->okupansi }}%</div>
+                    <div style="font-size:16px;font-weight:800;color:var(--ora)"><?php echo e($area->okupansi); ?>%</div>
                     <div style="font-size:9px;color:var(--gray2);margin-top:3px;
                                 text-transform:uppercase;letter-spacing:.5px">Okupansi</div>
                 </div>
-                @else
+                <?php else: ?>
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
-                    <div style="font-size:16px;font-weight:800;color:var(--ora)">{{ $totalArea }}</div>
+                    <div style="font-size:16px;font-weight:800;color:var(--ora)"><?php echo e($totalArea); ?></div>
                     <div style="font-size:9px;color:var(--gray2);margin-top:3px;
                                 text-transform:uppercase;letter-spacing:.5px">Area</div>
                 </div>
-                @endif
+                <?php endif; ?>
                 <div style="background:var(--s2);border-radius:9px;padding:10px;text-align:center">
-                    <div style="font-size:16px;font-weight:800;color:var(--blu)">{{ $sedangParkir }}</div>
+                    <div style="font-size:16px;font-weight:800;color:var(--blu)"><?php echo e($sedangParkir); ?></div>
                     <div style="font-size:9px;color:var(--gray2);margin-top:3px;
                                 text-transform:uppercase;letter-spacing:.5px">Aktif</div>
                 </div>
@@ -166,11 +170,11 @@
                         <stop offset="100%" stop-color="#cc44ff" stop-opacity="0.01"/>
                     </linearGradient>
                 </defs>
-                {{-- Grid lines --}}
+                
                 <line x1="0" y1="20" x2="480" y2="20" stroke="var(--s2)" stroke-width="1"/>
                 <line x1="0" y1="40" x2="480" y2="40" stroke="var(--s2)" stroke-width="1"/>
                 <line x1="0" y1="60" x2="480" y2="60" stroke="var(--s2)" stroke-width="1"/>
-                {{-- Paths dirender JS --}}
+                
             </svg>
         </div>
         <div id="chart_dates" style="display:flex;justify-content:space-between;padding:0 2px"></div>
@@ -180,25 +184,27 @@
                 background:var(--bdr);border-top:1px solid var(--bdr)">
         <div style="background:var(--card);padding:12px 16px;text-align:center">
             <div style="font-size:15px;font-weight:800;color:var(--grn)">
-                {{ 'Rp ' . number_format($totalRev, 0, ',', '.') }}
+                <?php echo e('Rp ' . number_format($totalRev, 0, ',', '.')); ?>
+
             </div>
             <div style="font-size:9px;color:var(--gray2);margin-top:4px;
                         text-transform:uppercase;letter-spacing:.5px">Pendapatan</div>
         </div>
         <div style="background:var(--card);padding:12px 16px;text-align:center">
-            <div style="font-size:15px;font-weight:800;color:var(--pur)">{{ $totalKend }}</div>
+            <div style="font-size:15px;font-weight:800;color:var(--pur)"><?php echo e($totalKend); ?></div>
             <div style="font-size:9px;color:var(--gray2);margin-top:4px;
                         text-transform:uppercase;letter-spacing:.5px">Kendaraan</div>
         </div>
         <div style="background:var(--card);padding:12px 16px;text-align:center">
             <div style="font-size:15px;font-weight:800;color:var(--ora)">
-                {{ 'Rp ' . number_format($avgBiaya, 0, ',', '.') }}
+                <?php echo e('Rp ' . number_format($avgBiaya, 0, ',', '.')); ?>
+
             </div>
             <div style="font-size:9px;color:var(--gray2);margin-top:4px;
                         text-transform:uppercase;letter-spacing:.5px">Rata-rata</div>
         </div>
         <div style="background:var(--card);padding:12px 16px;text-align:center">
-            <div style="font-size:15px;font-weight:800;color:var(--blu)">{{ $sedangParkir }}</div>
+            <div style="font-size:15px;font-weight:800;color:var(--blu)"><?php echo e($sedangParkir); ?></div>
             <div style="font-size:9px;color:var(--gray2);margin-top:4px;
                         text-transform:uppercase;letter-spacing:.5px">Aktif Parkir</div>
         </div>
@@ -207,16 +213,16 @@
 
 <div class="panel">
     <form method="GET">
-        <input type="hidden" name="filter"  value="{{ $filter }}">
-        <input type="hidden" name="dari"    value="{{ $df->format('Y-m-d') }}">
-        <input type="hidden" name="sampai"  value="{{ $dt->format('Y-m-d') }}">
+        <input type="hidden" name="filter"  value="<?php echo e($filter); ?>">
+        <input type="hidden" name="dari"    value="<?php echo e($df->format('Y-m-d')); ?>">
+        <input type="hidden" name="sampai"  value="<?php echo e($dt->format('Y-m-d')); ?>">
 
         <div style="padding:12px 20px;display:flex;gap:12px;align-items:flex-end;
                     flex-wrap:wrap;border-bottom:1px solid var(--bdr)">
 
             <div style="display:flex;flex-direction:column;gap:4px">
                 <span style="font-size:10px;color:var(--gray2);text-transform:uppercase;letter-spacing:.8px">Area</span>
-                @if($area)
+                <?php if($area): ?>
                 <div style="background:var(--s2);border:1px solid rgba(204,68,255,.35);border-radius:8px;
                             padding:8px 12px;font-size:12px;color:var(--pur);font-weight:700;
                             display:flex;align-items:center;gap:6px;white-space:nowrap">
@@ -224,20 +230,22 @@
                         <rect x="3" y="11" width="18" height="11" rx="2"/>
                         <path d="M7 11V7a5 5 0 0110 0v4"/>
                     </svg>
-                    {{ $area->nama_area }}
+                    <?php echo e($area->nama_area); ?>
+
                 </div>
-                @else
+                <?php else: ?>
                 <select name="area" onchange="this.form.submit()"
                         style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                                padding:8px 12px;color:var(--wht);font-size:12px;outline:none;min-width:160px">
                     <option value="0">Semua Area</option>
-                    @foreach($areaList as $al)
-                        <option value="{{ $al->id_area }}" {{ $fa == $al->id_area ? 'selected' : '' }}>
-                            {{ $al->nama_area }}
+                    <?php $__currentLoopData = $areaList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $al): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($al->id_area); ?>" <?php echo e($fa == $al->id_area ? 'selected' : ''); ?>>
+                            <?php echo e($al->nama_area); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
-                @endif
+                <?php endif; ?>
             </div>
 
             <div style="display:flex;flex-direction:column;gap:4px">
@@ -246,11 +254,11 @@
                         style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                                padding:8px 12px;color:var(--wht);font-size:12px;outline:none;min-width:150px">
                     <option value="">Semua Jenis</option>
-                    @if(isset($jenisList) && count($jenisList))
-                        @foreach($jenisList as $j)
-                            <option value="{{ $j }}" {{ $fj === $j ? 'selected' : '' }}>{{ ucfirst($j) }}</option>
-                        @endforeach
-                    @endif
+                    <?php if(isset($jenisList) && count($jenisList)): ?>
+                        <?php $__currentLoopData = $jenisList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $j): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($j); ?>" <?php echo e($fj === $j ? 'selected' : ''); ?>><?php echo e(ucfirst($j)); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    <?php endif; ?>
                 </select>
             </div>
 
@@ -259,12 +267,12 @@
                 <select name="sort" onchange="this.form.submit()"
                         style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;
                                padding:8px 12px;color:var(--wht);font-size:12px;outline:none;min-width:130px">
-                    <option value="waktu_masuk" {{ $fsort === 'waktu_masuk' ? 'selected' : '' }}>Terbaru</option>
-                    <option value="biaya_total" {{ $fsort === 'biaya_total' ? 'selected' : '' }}>Total Biaya</option>
+                    <option value="waktu_masuk" <?php echo e($fsort === 'waktu_masuk' ? 'selected' : ''); ?>>Terbaru</option>
+                    <option value="biaya_total" <?php echo e($fsort === 'biaya_total' ? 'selected' : ''); ?>>Total Biaya</option>
                 </select>
             </div>
 
-            <a href="?filter={{ $filter }}" class="btn btn-out btn-sm" style="align-self:flex-end">
+            <a href="?filter=<?php echo e($filter); ?>" class="btn btn-out btn-sm" style="align-self:flex-end">
                 Reset Filter
             </a>
         </div>
@@ -279,71 +287,74 @@
             </tr>
         </thead>
         <tbody>
-        @forelse($rekap as $t)
-        @php
+        <?php $__empty_1 = true; $__currentLoopData = $rekap; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <?php
             $kj = $t->kendaraan->jenis_kendaraan ?? '';
             $jc = $jenisColors[$kj] ?? 'p-blu';
             $jl = $kj ? ucfirst($kj) : '—';
-        @endphp
+        ?>
         <tr>
             <td class="t-gray" style="font-size:11px">
-                TRX-{{ str_pad($t->id_parkir, 4, '0', STR_PAD_LEFT) }}
+                TRX-<?php echo e(str_pad($t->id_parkir, 4, '0', STR_PAD_LEFT)); ?>
+
             </td>
-            <td style="font-size:11px">{{ $t->waktu_masuk->format('d M Y') }}</td>
-            <td class="fw7">{{ $t->kendaraan->plat_nomor ?? '—' }}</td>
-            <td><span class="pill {{ $jc }}">{{ $jl }}</span></td>
-            <td class="t-gray" style="font-size:11px">{{ $t->area->nama_area ?? '—' }}</td>
-            <td style="font-size:11px">{{ $t->waktu_masuk->format('H:i') }}</td>
-            <td style="font-size:11px">{{ $t->waktu_keluar?->format('H:i') ?? '—' }}</td>
-            <td style="font-size:11px">{{ $t->durasiLabel }}</td>
-            <td class="fw7 t-grn">{{ $t->biayaRupiah }}</td>
+            <td style="font-size:11px"><?php echo e($t->waktu_masuk->format('d M Y')); ?></td>
+            <td class="fw7"><?php echo e($t->kendaraan->plat_nomor ?? '—'); ?></td>
+            <td><span class="pill <?php echo e($jc); ?>"><?php echo e($jl); ?></span></td>
+            <td class="t-gray" style="font-size:11px"><?php echo e($t->area->nama_area ?? '—'); ?></td>
+            <td style="font-size:11px"><?php echo e($t->waktu_masuk->format('H:i')); ?></td>
+            <td style="font-size:11px"><?php echo e($t->waktu_keluar?->format('H:i') ?? '—'); ?></td>
+            <td style="font-size:11px"><?php echo e($t->durasiLabel); ?></td>
+            <td class="fw7 t-grn"><?php echo e($t->biayaRupiah); ?></td>
         </tr>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <tr>
             <td colspan="9" style="text-align:center;color:var(--gray2);padding:32px">
                 Tidak ada data untuk periode ini.
             </td>
         </tr>
-        @endforelse
+        <?php endif; ?>
         </tbody>
     </table>
 
     <div class="pager">
         <span class="pager-info">
-            Menampilkan {{ $rekap->firstItem() ?? 0 }} - {{ $rekap->lastItem() ?? 0 }}
-            dari {{ $rekap->total() }} transaksi
+            Menampilkan <?php echo e($rekap->firstItem() ?? 0); ?> - <?php echo e($rekap->lastItem() ?? 0); ?>
+
+            dari <?php echo e($rekap->total()); ?> transaksi
         </span>
         <div class="pager-btns">
-            @if($rekap->onFirstPage())
+            <?php if($rekap->onFirstPage()): ?>
                 <span class="pb dis">&#8249;</span>
-            @else
-                <a href="{{ $rekap->previousPageUrl() }}" class="pb">&#8249;</a>
-            @endif
-            @foreach($rekap->getUrlRange(
+            <?php else: ?>
+                <a href="<?php echo e($rekap->previousPageUrl()); ?>" class="pb">&#8249;</a>
+            <?php endif; ?>
+            <?php $__currentLoopData = $rekap->getUrlRange(
                 max(1, $rekap->currentPage() - 2),
                 min($rekap->lastPage(), $rekap->currentPage() + 2)
-            ) as $page => $url)
-                <a href="{{ $url }}" class="pb {{ $page === $rekap->currentPage() ? 'act' : '' }}">
-                    {{ $page }}
+            ); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $page => $url): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <a href="<?php echo e($url); ?>" class="pb <?php echo e($page === $rekap->currentPage() ? 'act' : ''); ?>">
+                    <?php echo e($page); ?>
+
                 </a>
-            @endforeach
-            @if($rekap->hasMorePages())
-                <a href="{{ $rekap->nextPageUrl() }}" class="pb">&#8250;</a>
-            @else
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            <?php if($rekap->hasMorePages()): ?>
+                <a href="<?php echo e($rekap->nextPageUrl()); ?>" class="pb">&#8250;</a>
+            <?php else: ?>
                 <span class="pb dis">&#8250;</span>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-const chartHariIni = @json($chart);        
-const chartKemarin = @json($chartKemarin);  
-const chartMax     = {{ $chartMax }};        
+const chartHariIni = <?php echo json_encode($chart, 15, 512) ?>;        
+const chartKemarin = <?php echo json_encode($chartKemarin, 15, 512) ?>;  
+const chartMax     = <?php echo e($chartMax); ?>;        
 
 const svg  = document.getElementById('rekap_chart');
 const dRow = document.getElementById('chart_dates');
@@ -451,4 +462,5 @@ for (let i = 0; i < n; i++){
 }
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\SHAFA\park-in\resources\views/owner/rekap.blade.php ENDPATH**/ ?>
