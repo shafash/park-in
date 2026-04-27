@@ -34,9 +34,15 @@
       <div style="background:var(--s2);border-radius:10px;padding:16px">
         <div style="font-size:11px;color:var(--gray2);text-transform:uppercase;letter-spacing:1px">Estimasi Biaya</div>
         <div style="font-size:24px;font-weight:800;color:var(--grn);margin-top:6px">
-          Rp. {{ number_format($estBiaya, 0, ',', '.') }}
-        </div>
-        <div style="font-size:11px;color:var(--gray2)">{{ $durEst }}j × Rp. {{ number_format($trx->tarif->tarif_per_jam, 0, ',', '.') }}/j</div>
+            Rp. {{ number_format($estBiaya, 0, ',', '.') }}
+          </div>
+          <div style="font-size:11px;color:var(--gray2);margin-top:6px">
+            <div>Tarif awal: Rp. {{ number_format($trx->tarif->tarif_awal ?? 0,0,',','.') }}</div>
+            <div>Tarif per jam: Rp. {{ number_format($trx->tarif->tarif_per_jam ?? 0,0,',','.') }}</div>
+            <div>Batas durasi sebelum denda: {{ $trx->tarif->batas_durasi_jam ?? 0 }}j</div>
+            <div>Denda per jam (jika melebihi): Rp. {{ number_format($trx->tarif->denda_per_jam ?? 0,0,',','.') }}</div>
+            <div style="margin-top:6px">Estimasi durasi: <strong>{{ $durEst }} jam</strong></div>
+          </div>
       </div>
     </div>
 

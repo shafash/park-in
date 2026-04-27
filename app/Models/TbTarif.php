@@ -11,7 +11,7 @@ class TbTarif extends Model
     protected $primaryKey = 'id_tarif';
     public    $timestamps = false;
 
-    protected $fillable = ['jenis_kendaraan', 'tarif_awal', 'tarif_per_jam', 'tarif_maks_per_hari', 'denda_per_jam'];
+    protected $fillable = ['jenis_kendaraan', 'tarif_awal', 'tarif_per_jam', 'denda_per_jam', 'batas_durasi_jam'];
 
     public function transaksis(): HasMany
     {

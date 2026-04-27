@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\TbTransaksi;
+use App\Services\ParkingCalculator;
 use App\Models\TbKendaraan;
 use App\Models\TbAreaParkir;
 use App\Models\TbTarif;
@@ -181,7 +182,18 @@ class TransaksiController extends Controller
         }
 
         $durEst = max(1, (int) ceil((now()->timestamp - $trx->waktu_masuk->timestamp) / 3600));
-        $estBiaya = $durEst * $trx->tarif->tarif_per_jam;
+        $basePrice   = $trx->tarif->tarif_awal ?? 0;
+        $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
+        $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
+        $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
+
+        $estBiaya = ParkingCalculator::calculateFromMinutes(
+            durationMinutes: $durEst * 60,
+            basePrice: $basePrice,
+            hourlyRate: $hourlyRate,
+            maxHours: $maxHours,
+            penaltyRate: $penaltyRate
+        );
 
         return view('petugas.keluar', array_merge($this->stats(), compact('trx', 'durEst', 'estBiaya')));
     }
@@ -200,7 +212,19 @@ class TransaksiController extends Controller
 
         $wk       = now();
         $dur      = max(1, (int) ceil(($wk->timestamp - $trx->waktu_masuk->timestamp) / 3600));
-        $biaya    = $dur * $trx->tarif->tarif_per_jam;
+
+        $basePrice   = $trx->tarif->tarif_awal ?? 0;
+        $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
+        $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
+        $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
+
+        $biaya = ParkingCalculator::calculateFromMinutes(
+            durationMinutes: $dur * 60,
+            basePrice: $basePrice,
+            hourlyRate: $hourlyRate,
+            maxHours: $maxHours,
+            penaltyRate: $penaltyRate
+        );
 
         $trx->update([
             'waktu_keluar' => $wk,
