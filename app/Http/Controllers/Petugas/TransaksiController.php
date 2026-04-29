@@ -11,6 +11,7 @@ use App\Models\TbTarif;
 use App\Models\TbLogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TransaksiController extends Controller
 {
@@ -128,45 +129,60 @@ class TransaksiController extends Controller
         ]);
 
         $plat = strtoupper($request->plat_nomor);
-
-        // Cek / daftar kendaraan
-        $kendaraan = TbKendaraan::firstOrCreate(
-            ['plat_nomor' => $plat],
-            [
-                'jenis_kendaraan' => TbTarif::find($request->id_tarif)->jenis_kendaraan ?? 'lainnya',
-                'warna'           => '',
-                'pemilik'         => '',
-                'created_at'      => now(),
-            ]
-        );
-
-        // Cek masih aktif
-        if (TbTransaksi::where('id_kendaraan', $kendaraan->id_kendaraan)->where('status', 'masuk')->exists()) {
-            return back()->with('error', "Kendaraan $plat masih aktif parkir.")->withInput();
-        }
-
-        $area = TbAreaParkir::findOrFail($request->id_area);
         // Jika user punya area yang ditetapkan, pastikan tidak boleh pilih area lain
         if (Auth::user()->id_area && Auth::user()->id_area != $request->id_area) {
             return back()->with('error', 'Anda tidak berwenang mengakses area tersebut.')->withInput();
         }
-        if ($area->terisi >= $area->kapasitas) {
-            return back()->with('error', "Area {$area->nama_area} sudah penuh!")->withInput();
-        }
 
-        TbTransaksi::create([
-            'id_kendaraan' => $kendaraan->id_kendaraan,
-            'waktu_masuk'  => now(),
-            'id_tarif'     => $request->id_tarif,
-            'status'       => 'masuk',
-            'id_user'      => Auth::id(),
-            'id_area'      => $request->id_area,
-        ]);
+        return DB::transaction(function () use ($request, $plat) {
+            $area = TbAreaParkir::where('id_area', $request->id_area)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $area->increment('terisi');
-        TbLogAktivitas::catat(Auth::id(), "Kendaraan masuk: $plat ke {$area->nama_area}");
+            if ($area->terisi >= $area->kapasitas) {
+                return back()->with('error', "Area {$area->nama_area} sudah penuh!")->withInput();
+            }
 
-        return back()->with('success', "Kendaraan $plat berhasil dicatat masuk ke {$area->nama_area}.");
+            $kendaraan = TbKendaraan::where('plat_nomor', $plat)->lockForUpdate()->first();
+            if (!$kendaraan) {
+                $tarif = TbTarif::find($request->id_tarif);
+                $kendaraan = TbKendaraan::create([
+                    'plat_nomor'      => $plat,
+                    'jenis_kendaraan' => $tarif->jenis_kendaraan ?? 'lainnya',
+                    'warna'           => '',
+                    'pemilik'         => '',
+                    'created_at'      => now(),
+                ]);
+
+                $kendaraan = TbKendaraan::where('id_kendaraan', $kendaraan->id_kendaraan)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            }
+
+            $aktif = TbTransaksi::where('id_kendaraan', $kendaraan->id_kendaraan)
+                ->where('status', 'masuk')
+                ->lockForUpdate()
+                ->first();
+
+            // Idempotency dasar: request ulang untuk kendaraan yang sama tidak membuat transaksi ganda.
+            if ($aktif) {
+                return back()->with('error', "Kendaraan $plat masih aktif parkir.")->withInput();
+            }
+
+            TbTransaksi::create([
+                'id_kendaraan' => $kendaraan->id_kendaraan,
+                'waktu_masuk'  => now(),
+                'id_tarif'     => $request->id_tarif,
+                'status'       => 'masuk',
+                'id_user'      => Auth::id(),
+                'id_area'      => $request->id_area,
+            ]);
+
+            $area->increment('terisi');
+            TbLogAktivitas::catat(Auth::id(), "Kendaraan masuk: $plat ke {$area->nama_area}");
+
+            return back()->with('success', "Kendaraan $plat berhasil dicatat masuk ke {$area->nama_area}.");
+        });
     }
 
     public function keluarForm($id)
@@ -200,45 +216,60 @@ class TransaksiController extends Controller
 
     public function keluarStore(Request $request, $id)
     {
-        $trx = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
-            ->where('id_parkir', $id)
-            ->where('status', 'masuk')
-            ->firstOrFail();
+        return DB::transaction(function () use ($id) {
+            $trx = TbTransaksi::with(['kendaraan', 'tarif'])
+                ->where('id_parkir', $id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        // Batasi operasi keluar ke area milik user ketika ditetapkan
-        if (Auth::user()->id_area && $trx->id_area != Auth::user()->id_area) {
-            return back()->with('error', 'Anda tidak berwenang memproses transaksi di area ini.');
-        }
+            // Batasi operasi keluar ke area milik user ketika ditetapkan
+            if (Auth::user()->id_area && $trx->id_area != Auth::user()->id_area) {
+                return back()->with('error', 'Anda tidak berwenang memproses transaksi di area ini.');
+            }
 
-        $wk       = now();
-        $dur      = max(1, (int) ceil(($wk->timestamp - $trx->waktu_masuk->timestamp) / 3600));
+            $area = TbAreaParkir::where('id_area', $trx->id_area)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $basePrice   = $trx->tarif->tarif_awal ?? 0;
-        $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
-        $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
-        $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
+            // Idempotency dasar: request keluar berulang pada transaksi yang sama tidak diproses ulang.
+            if ($trx->status !== 'masuk') {
+                return redirect()->route('petugas.struk.show', $id)
+                    ->with('success', "Transaksi {$trx->kendaraan->plat_nomor} sudah diproses sebelumnya.");
+            }
 
-        $biaya = ParkingCalculator::calculateFromMinutes(
-            durationMinutes: $dur * 60,
-            basePrice: $basePrice,
-            hourlyRate: $hourlyRate,
-            maxHours: $maxHours,
-            penaltyRate: $penaltyRate
-        );
+            $wk  = now();
+            $dur = max(1, (int) ceil(($wk->timestamp - $trx->waktu_masuk->timestamp) / 3600));
 
-        $trx->update([
-            'waktu_keluar' => $wk,
-            'durasi_jam'   => $dur,
-            'biaya_total'  => $biaya,
-            'status'       => 'keluar',
-        ]);
+            $basePrice   = $trx->tarif->tarif_awal ?? 0;
+            $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
+            $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
+            $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
 
-        $trx->area->decrement('terisi');
-        TbLogAktivitas::catat(Auth::id(), "Kendaraan keluar: {$trx->kendaraan->plat_nomor} — {$trx->area->nama_area} — Rp " . number_format($biaya, 0, ',', '.'));
+            $biaya = ParkingCalculator::calculateFromMinutes(
+                durationMinutes: $dur * 60,
+                basePrice: $basePrice,
+                hourlyRate: $hourlyRate,
+                maxHours: $maxHours,
+                penaltyRate: $penaltyRate
+            );
 
-        session(['last_trx' => $id]);
+            $trx->update([
+                'waktu_keluar' => $wk,
+                'durasi_jam'   => $dur,
+                'biaya_total'  => $biaya,
+                'status'       => 'keluar',
+            ]);
 
-        return redirect()->route('petugas.struk.show', $id)
-            ->with('success', "Kendaraan {$trx->kendaraan->plat_nomor} selesai. Biaya: Rp " . number_format($biaya, 0, ',', '.'));
+            if ($area->terisi > 0) {
+                $area->decrement('terisi');
+            }
+
+            TbLogAktivitas::catat(Auth::id(), "Kendaraan keluar: {$trx->kendaraan->plat_nomor} — {$area->nama_area} — Rp " . number_format($biaya, 0, ',', '.'));
+
+            session(['last_trx' => $id]);
+
+            return redirect()->route('petugas.struk.show', $id)
+                ->with('success', "Kendaraan {$trx->kendaraan->plat_nomor} selesai. Biaya: Rp " . number_format($biaya, 0, ',', '.'));
+        });
     }
 }

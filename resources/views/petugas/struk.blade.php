@@ -35,7 +35,8 @@
       @forelse($list as $r)
       @php $sel = isset($trx) && $trx->id_parkir === $r->id_parkir; @endphp
       <tr style="{{ $sel ? 'background:rgba(137,233,0,.07)' : '' }};cursor:pointer"
-          onclick="window.location='{{ route('petugas.struk.show', $r->id_parkir) }}'">
+          class="js-struk-row"
+          data-href="{{ route('petugas.struk.show', $r->id_parkir) }}">
         <td class="t-gray" style="font-size:12px">{{ $r->tid }}</td>
         <td class="fw7">{{ $r->kendaraan->plat_nomor ?? '—' }}</td>
         <td style="font-size:13px">{{ $r->waktu_masuk->format('H:i') }} WIB</td>
@@ -105,3 +106,15 @@
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('click', function (event) {
+  var row = event.target.closest('.js-struk-row');
+  if (!row) return;
+  if (!row.dataset.href) return;
+
+  window.location.href = row.dataset.href;
+});
+</script>
+@endpush

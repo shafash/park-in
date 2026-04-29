@@ -45,7 +45,9 @@
         @if($k->foto)
           <img src="{{ asset('uploads/kendaraan/'.$k->foto) }}" alt="{{ $k->plat_nomor }}"
                style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--b2);cursor:pointer"
-               onclick="previewFoto('{{ asset('uploads/kendaraan/'.$k->foto) }}','{{ $k->plat_nomor }}')">
+               class="js-preview-foto"
+               data-foto-url="{{ asset('uploads/kendaraan/'.$k->foto) }}"
+               data-plat="{{ $k->plat_nomor }}">
         @else
           <div style="width:52px;height:40px;border-radius:6px;background:var(--s2);border:1px dashed var(--b2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gray2)">No img</div>
         @endif
@@ -63,7 +65,16 @@
       <td class="t-gray" style="font-size:12px">{{ $k->created_at?->format('d M Y') }}</td>
       <td>
         <div class="tbl-acts">
-          <button class="btn btn-out btn-xs" onclick="openEdit({{ $k->id_kendaraan }},'{{ addslashes($k->plat_nomor) }}','{{ $k->jenis_kendaraan }}','{{ addslashes($k->merek) }}','{{ addslashes($k->warna) }}','{{ addslashes($k->pemilik) }}','{{ $k->foto }}')">Edit</button>
+          <button class="btn btn-out btn-xs js-open-edit-kendaraan"
+                  data-edit='@json([
+                    "id" => $k->id_kendaraan,
+                    "plat" => $k->plat_nomor,
+                    "jenis" => $k->jenis_kendaraan,
+                    "merek" => $k->merek,
+                    "warna" => $k->warna,
+                    "pemilik" => $k->pemilik,
+                    "foto" => $k->foto,
+                  ])'>Edit</button>
           <form id="form-hapus-kend-{{ $k->id_kendaraan }}" method="POST"
                 action="{{ route('admin.kendaraan.destroy', $k->id_kendaraan) }}"
                 style="display:none">
@@ -188,25 +199,25 @@ function previewFoto(url, plat) {
   document.getElementById('foto_modal_title').childNodes[0].textContent = plat + ' ';
   document.getElementById('m-foto').classList.remove('hide');
 }
-function openEdit(id, plat, jenis, merek, warna, pemilik, foto) {
-  document.getElementById('e_plat').value    = plat;
-  document.getElementById('e_jenis').value   = jenis;
-  document.getElementById('e_merek').value   = merek;
-  document.getElementById('e_warna').value   = warna;
-  document.getElementById('e_pemilik').value = pemilik;
+function openEdit(payload) {
+  document.getElementById('e_plat').value    = payload.plat ?? '';
+  document.getElementById('e_jenis').value   = payload.jenis ?? '';
+  document.getElementById('e_merek').value   = payload.merek ?? '';
+  document.getElementById('e_warna').value   = payload.warna ?? '';
+  document.getElementById('e_pemilik').value = payload.pemilik ?? '';
   document.getElementById('hapus_foto_flag').value = '0';
   document.getElementById('e_foto_input').value = '';
 
   var wrap = document.getElementById('e_foto_wrap');
-  if (foto) {
-    document.getElementById('e_foto_preview').src = '/uploads/kendaraan/' + foto;
+  if (payload.foto) {
+    document.getElementById('e_foto_preview').src = '/uploads/kendaraan/' + payload.foto;
     wrap.style.display = 'block';
   } else {
     wrap.style.display = 'none';
   }
-  document.getElementById('edit-form').action = '/admin/kendaraan/' + id;
+  document.getElementById('edit-form').action = '/admin/kendaraan/' + payload.id;
   // adjust plat input requirement/placeholder based on jenis
-  togglePlatForEdit(jenis);
+  togglePlatForEdit(payload.jenis);
   document.getElementById('m-edit').classList.remove('hide');
 }
 
@@ -237,6 +248,21 @@ function togglePlatForEdit(jenis) {
 document.addEventListener('DOMContentLoaded', function(){
   var addSel = document.getElementById('add_jenis');
   if (addSel) togglePlatForAdd(addSel.value);
+});
+
+document.addEventListener('click', function (event) {
+  var previewTarget = event.target.closest('.js-preview-foto');
+  if (previewTarget) {
+    previewFoto(previewTarget.dataset.fotoUrl || '', previewTarget.dataset.plat || '');
+    return;
+  }
+
+  var editBtn = event.target.closest('.js-open-edit-kendaraan');
+  if (!editBtn) return;
+
+  var payload = editBtn.dataset.edit ? JSON.parse(editBtn.dataset.edit) : null;
+  if (!payload) return;
+  openEdit(payload);
 });
 </script>
 @endpush

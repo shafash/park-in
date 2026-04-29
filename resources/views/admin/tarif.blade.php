@@ -38,7 +38,15 @@
       <td class="t-gray">Rp. {{ number_format($t->denda_per_jam ?? 0,0,',','.') }}</td>
       <td>
         <div class="tbl-acts">
-          <button class="btn btn-out btn-xs" onclick="openEdit({{ $t->id_tarif }},'{{ $t->jenis_kendaraan }}',{{ $t->tarif_awal ?? 0 }},{{ $t->tarif_per_jam }},{{ $t->batas_durasi_jam ?? 8 }},{{ $t->denda_per_jam ?? 0 }})">Edit</button>
+          <button class="btn btn-out btn-xs js-open-edit-tarif"
+                  data-edit='@json([
+                    "id" => $t->id_tarif,
+                    "jenis" => $t->jenis_kendaraan,
+                    "awal" => (int) ($t->tarif_awal ?? 0),
+                    "tarif" => (int) $t->tarif_per_jam,
+                    "batas" => (int) ($t->batas_durasi_jam ?? 8),
+                    "denda" => (int) ($t->denda_per_jam ?? 0),
+                  ])'>Edit</button>
           <form id="form-hapus-tarif-{{ $t->id_tarif }}" method="POST"
                 action="{{ route('admin.tarif.destroy', $t->id_tarif) }}"
                 style="display:none">
@@ -108,14 +116,24 @@
 
 @push('scripts')
 <script>
-function openEdit(id,j,awal,t,batas,denda){
-  document.getElementById('e_jenis').value = j;
-  document.getElementById('e_awal').value = awal;
-  document.getElementById('e_tarif').value = t;
-  document.getElementById('e_batas').value = batas ?? 8;
-  document.getElementById('e_denda').value = denda ?? 0;
-  document.getElementById('edit-form').action='/admin/tarif/'+id;
+function openEditTarif(payload){
+  document.getElementById('e_jenis').value = payload.jenis ?? '';
+  document.getElementById('e_awal').value = payload.awal ?? 0;
+  document.getElementById('e_tarif').value = payload.tarif ?? 0;
+  document.getElementById('e_batas').value = payload.batas ?? 8;
+  document.getElementById('e_denda').value = payload.denda ?? 0;
+  document.getElementById('edit-form').action='/admin/tarif/' + payload.id;
   document.getElementById('m-edit').classList.remove('hide');
 }
+
+document.addEventListener('click', function (event) {
+  var btn = event.target.closest('.js-open-edit-tarif');
+  if (!btn) return;
+
+  var payload = btn.dataset.edit ? JSON.parse(btn.dataset.edit) : null;
+  if (!payload) return;
+
+  openEditTarif(payload);
+});
 </script>
 @endpush

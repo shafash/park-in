@@ -76,7 +76,14 @@
         <td><span class="pill {{ $sp }}">{{ $sl }}</span></td>
         <td>
           <div class="tbl-acts">
-            <button class="btn btn-out btn-xs" onclick="openEdit({{ $u->id_user }},'{{ addslashes($u->nama_lengkap) }}','{{ $u->role }}',{{ $u->status_aktif }},{{ $u->id_area ?? 'null' }})">Edit</button>
+            <button class="btn btn-out btn-xs js-open-edit-user"
+                    data-edit='@json([
+                      "id" => $u->id_user,
+                      "nama" => $u->nama_lengkap,
+                      "role" => $u->role,
+                      "aktif" => (int) $u->status_aktif,
+                      "id_area" => $u->id_area,
+                    ])'>Edit</button>
             @if($u->id_user !== auth()->id() && $u->role !== 'admin')
             <form id="form-hapus-user-{{ $u->id_user }}" method="POST"
                   action="{{ route('admin.registrasi.destroy', $u->id_user) }}"
@@ -160,14 +167,24 @@ function toggleArea(wrapId, role) {
 // Init on page load
 toggleArea('add_area_wrap', document.getElementById('add_role').value);
 
-function openEdit(id, nama, role, aktif, idArea) {
-  document.getElementById('e_nama').value   = nama;
-  document.getElementById('e_role').value   = role;
-  document.getElementById('e_aktif').checked = aktif == 1;
-  document.getElementById('e_area').value   = idArea || '';
-  toggleArea('e_area_wrap', role);
-  document.getElementById('edit-form').action = '/admin/registrasi/' + id;
+function openEdit(payload) {
+  document.getElementById('e_nama').value   = payload.nama ?? '';
+  document.getElementById('e_role').value   = payload.role ?? 'petugas';
+  document.getElementById('e_aktif').checked = Number(payload.aktif) === 1;
+  document.getElementById('e_area').value   = payload.id_area || '';
+  toggleArea('e_area_wrap', payload.role);
+  document.getElementById('edit-form').action = '/admin/registrasi/' + payload.id;
   document.getElementById('m-edit').classList.remove('hide');
 }
+
+document.addEventListener('click', function (event) {
+  var btn = event.target.closest('.js-open-edit-user');
+  if (!btn) return;
+
+  var payload = btn.dataset.edit ? JSON.parse(btn.dataset.edit) : null;
+  if (!payload) return;
+
+  openEdit(payload);
+});
 </script>
 @endpush

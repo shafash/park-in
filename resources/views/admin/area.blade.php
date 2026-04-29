@@ -29,7 +29,14 @@
       <td><span class="pill {{ $a->status ? 'p-grn' : 'p-red' }}">{{ $a->status ? 'Aktif' : 'Non Aktif' }}</span></td>
       <td>
         <div class="tbl-acts">
-          <button class="btn btn-out btn-xs" onclick="openEdit({{ $a->id_area }},'{{ addslashes($a->nama_area) }}','{{ addslashes($a->alamat) }}',{{ $a->kapasitas }},{{ $a->status }})">Edit</button>
+          <button class="btn btn-out btn-xs js-open-edit-area"
+                  data-edit='@json([
+                    "id" => $a->id_area,
+                    "nama" => $a->nama_area,
+                    "alamat" => $a->alamat,
+                    "kapasitas" => $a->kapasitas,
+                    "status" => (int) $a->status,
+                  ])'>Edit</button>
           <form id="form-hapus-area-{{ $a->id_area }}" method="POST"
                 action="{{ route('admin.area.destroy', $a->id_area) }}"
                 style="display:none">
@@ -84,11 +91,23 @@
 
 @push('scripts')
 <script>
-function openEdit(id,nama,alamat,kap,stat){
-  document.getElementById('e_nama').value=nama; document.getElementById('e_alamat').value=alamat;
-  document.getElementById('e_kap').value=kap; document.getElementById('e_stat').checked=stat==1;
-  document.getElementById('edit-form').action='/admin/area/'+id;
+function openEditArea(payload){
+  document.getElementById('e_nama').value = payload.nama ?? '';
+  document.getElementById('e_alamat').value = payload.alamat ?? '';
+  document.getElementById('e_kap').value = payload.kapasitas ?? '';
+  document.getElementById('e_stat').checked = Number(payload.status) === 1;
+  document.getElementById('edit-form').action = '/admin/area/' + payload.id;
   document.getElementById('m-edit').classList.remove('hide');
 }
+
+document.addEventListener('click', function (event) {
+  var btn = event.target.closest('.js-open-edit-area');
+  if (!btn) return;
+
+  var payload = btn.dataset.edit ? JSON.parse(btn.dataset.edit) : null;
+  if (!payload) return;
+
+  openEditArea(payload);
+});
 </script>
 @endpush

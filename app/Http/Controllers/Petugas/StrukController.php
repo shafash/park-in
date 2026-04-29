@@ -53,18 +53,17 @@ class StrukController extends Controller
 
     public function show($id)
     {
+        $userArea = Auth::user()->id_area ?? null;
+
         $trx = TbTransaksi::with(['kendaraan', 'tarif', 'area', 'user'])
             ->where('id_parkir', $id)
             ->where('status', 'keluar')
+            ->when($userArea, fn($q) => $q->where('id_area', $userArea))
             ->firstOrFail();
-
-        $userArea = Auth::user()->id_area ?? null;
-        if ($userArea && $trx->id_area != $userArea) {
-            return back()->with('error', 'Anda tidak berwenang melihat transaksi di area ini.');
-        }
 
         $list = TbTransaksi::with('kendaraan')
             ->where('status', 'keluar')
+            ->when($userArea, fn($q) => $q->where('id_area', $userArea))
             ->orderByDesc('waktu_masuk')
             ->limit(10)
             ->get();
