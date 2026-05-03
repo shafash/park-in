@@ -11,17 +11,20 @@ use App\Models\TbKendaraan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Services\StatsService;
 
 class RegistrasiController extends Controller
 {
+    private StatsService $statsService;
+
+    public function __construct(StatsService $statsService)
+    {
+        $this->statsService = $statsService;
+    }
+
     private function stats(): array
     {
-        return [
-            'total_user' => User::count(),
-            'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
-            'total_kendaraan' => TbKendaraan::count(),
-            'log_hari'   => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
-        ];
+        return $this->statsService->adminStats();
     }
 
     public function index()

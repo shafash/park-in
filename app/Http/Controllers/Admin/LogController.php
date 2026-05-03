@@ -9,17 +9,20 @@ use App\Models\TbAreaParkir;
 use App\Models\TbTarif;
 use App\Models\TbKendaraan;
 use Illuminate\Http\Request;
+use App\Services\StatsService;
 
 class LogController extends Controller
 {
+    private StatsService $statsService;
+
+    public function __construct(StatsService $statsService)
+    {
+        $this->statsService = $statsService;
+    }
+
     private function stats(): array
     {
-        return [
-            'total_user'  => User::count(),
-            'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
-            'total_kendaraan' => TbKendaraan::count(),
-            'log_hari'    => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
-        ];
+        return $this->statsService->adminStats();
     }
 
     public function index(Request $request)
@@ -46,26 +49,33 @@ class LogController extends Controller
             $query->whereHas('user', fn($q) => $q->where('role', $role));
         }
 
-        $logs = $query->get();
-
         $filename = 'log_aktivitas_' . now()->format('Ymd') . '.csv';
         $headers  = [
             'Content-Type'        => 'text/csv;charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($logs) {
+        $callback = function () use ($query) {
             $f = fopen('php://output', 'w');
+            // header
             fputcsv($f, ['ID', 'Nama', 'Role', 'Aktivitas', 'Waktu']);
-            foreach ($logs as $log) {
-                fputcsv($f, [
-                    $log->id_log,
-                    $log->user->nama_lengkap ?? '-',
-                    $log->user->role ?? '-',
-                    $log->aktivitas,
-                    $log->waktu_aktivitas->format('d/m/Y H:i:s'),
-                ]);
-            }
+
+            // stream rows in chunks to avoid high memory usage
+            $query->chunkById(1000, function ($logs) use ($f) {
+                foreach ($logs as $log) {
+                    fputcsv($f, [
+                        $log->id_log,
+                        $log->user->nama_lengkap ?? '-',
+                        $log->user->role ?? '-',
+                        $log->aktivitas,
+                        $log->waktu_aktivitas->format('d/m/Y H:i:s'),
+                    ]);
+                }
+                // flush output buffers so client starts receiving data
+                if (function_exists('ob_flush')) { @ob_flush(); }
+                if (function_exists('flush')) { @flush(); }
+            });
+
             fclose($f);
         };
 

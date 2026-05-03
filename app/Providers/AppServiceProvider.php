@@ -33,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
             View::share('jenisList', $jenisList);
             View::share('jenisColors', $jenisColors);
         } catch (\Throwable $e) {
+            // Report bootstrap errors so they appear in logs and monitoring systems
+            report($e);
+            // Optionally share empty defaults to keep views working
+            View::share('jenisList', []);
+            View::share('jenisColors', []);
         }
     }
 }

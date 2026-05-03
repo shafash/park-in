@@ -48,6 +48,7 @@
     <div class="pb-body">
       <form method="POST" action="{{ route('petugas.transaksi.masuk.store') }}" id="form-masuk">
         @csrf
+        <input type="hidden" name="idempotency_key" id="idemp_key" value="">
 
         {{-- Plat + Autocomplete --}}
         <div class="fg" style="position:relative">
@@ -160,7 +161,7 @@
           <input type="text" id="waktu_inp" readonly style="color:var(--gray)">
         </div>
 
-        <button type="submit" class="btn btn-grn"
+        <button type="submit" id="btn-masuk" class="btn btn-grn"
                 style="width:100%;justify-content:center;padding:13px;font-size:14px">
           Catat Kendaraan Masuk
         </button>
@@ -459,5 +460,22 @@ setInterval(() => {
   const dot = document.getElementById('live_pulse');
   if (dot) { dot.style.opacity = blink ? '1' : '0.15'; blink = !blink; }
 }, 800);
+
+// Idempotency + disable-submit for Masuk form
+const formMasuk = document.getElementById('form-masuk');
+if (formMasuk) {
+  formMasuk.addEventListener('submit', function (e) {
+    const btn = document.getElementById('btn-masuk');
+    const keyEl = document.getElementById('idemp_key');
+    if (!keyEl.value) {
+      // generate a simple random idempotency key
+      keyEl.value = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('i_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+    }
+    // Disable button to prevent double submit
+    if (btn) {
+      btn.disabled = true; btn.style.opacity = '.6'; btn.textContent = 'Memproses...';
+    }
+  });
+}
 </script>
 @endpush

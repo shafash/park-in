@@ -11,17 +11,20 @@ use App\Models\TbLogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\StatsService;
 
 class KendaraanController extends Controller
 {
+    private StatsService $statsService;
+
+    public function __construct(StatsService $statsService)
+    {
+        $this->statsService = $statsService;
+    }
+
     private function stats(): array
     {
-        return [
-            'total_user'  => User::count(),
-            'area_aktif'  => TbAreaParkir::where('status', 1)->count(),
-            'total_kendaraan' => TbKendaraan::count(),
-            'log_hari'    => TbLogAktivitas::whereDate('waktu_aktivitas', today())->count(),
-        ];
+        return $this->statsService->adminStats();
     }
 
     public function index(Request $request)
@@ -101,8 +104,10 @@ class KendaraanController extends Controller
             if (!empty($fotoName) && file_exists(public_path('uploads/kendaraan/' . $fotoName))) {
                 @unlink(public_path('uploads/kendaraan/' . $fotoName));
             }
+            // Report the exception for monitoring and debugging
             report($e);
-            return back()->with('error', 'Gagal menambahkan kendaraan: ' . $e->getMessage());
+            // Return a safe, generic message to the user without exposing internal details
+            return back()->with('error', 'Gagal menambahkan kendaraan. Silakan coba lagi atau hubungi administrator.');
         }
     }
 

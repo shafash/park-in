@@ -12,19 +12,22 @@ use App\Models\TbLogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use App\Services\StatsService;
 
 class TransaksiController extends Controller
 {
+    private StatsService $statsService;
+
+    public function __construct(StatsService $statsService)
+    {
+        $this->statsService = $statsService;
+    }
     private function stats(): array
     {
-        $userArea = Auth::user()->id_area ?? null;
-
-        return [
-            'masuk'  => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->count(),
-            'keluar' => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
-            'diarea' => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->where('status', 'masuk')->count(),
-            'struk'  => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
-        ];
+        // kept for backward compatibility but delegate to service
+        return $this->statsService->petugasStats(Auth::user()->id_area ?? null);
     }
 
     /**
@@ -134,7 +137,19 @@ class TransaksiController extends Controller
             return back()->with('error', 'Anda tidak berwenang mengakses area tersebut.')->withInput();
         }
 
-        return DB::transaction(function () use ($request, $plat) {
+        // Optional idempotency key: prevents double-submit from client
+        $ikey = $request->input('idempotency_key');
+        $cacheKey = $ikey ? "idempotency:masuk:{$ikey}" : null;
+
+        if ($cacheKey) {
+            // Try to reserve this idempotency key for a short time (5 minutes)
+            if (!Cache::add($cacheKey, true, now()->addMinutes(5))) {
+                return back()->with('error', 'Permintaan sedang diproses atau sudah diproses.')->withInput();
+            }
+        }
+
+        try {
+            return DB::transaction(function () use ($request, $plat, $cacheKey) {
             $area = TbAreaParkir::where('id_area', $request->id_area)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -181,8 +196,16 @@ class TransaksiController extends Controller
             $area->increment('terisi');
             TbLogAktivitas::catat(Auth::id(), "Kendaraan masuk: $plat ke {$area->nama_area}");
 
+            // Keep idempotency marker in cache (already reserved). Return success.
             return back()->with('success', "Kendaraan $plat berhasil dicatat masuk ke {$area->nama_area}.");
         });
+        } catch (\Throwable $e) {
+            // On failure, allow retry by removing reservation
+            if ($cacheKey) {
+                Cache::forget($cacheKey);
+            }
+            throw $e;
+        }
     }
 
     public function keluarForm($id)
@@ -216,7 +239,19 @@ class TransaksiController extends Controller
 
     public function keluarStore(Request $request, $id)
     {
-        return DB::transaction(function () use ($id) {
+        // Optional idempotency key: prevents double-submit from client
+        $ikey = $request->input('idempotency_key');
+        $cacheKey = $ikey ? "idempotency:keluar:{$ikey}" : null;
+
+        if ($cacheKey) {
+            if (!Cache::add($cacheKey, true, now()->addMinutes(5))) {
+                return redirect()->route('petugas.struk.show', $id)
+                    ->with('success', 'Transaksi sedang diproses atau sudah diproses.');
+            }
+        }
+
+        try {
+            return DB::transaction(function () use ($id, $cacheKey) {
             $trx = TbTransaksi::with(['kendaraan', 'tarif'])
                 ->where('id_parkir', $id)
                 ->lockForUpdate()
@@ -267,9 +302,14 @@ class TransaksiController extends Controller
             TbLogAktivitas::catat(Auth::id(), "Kendaraan keluar: {$trx->kendaraan->plat_nomor} — {$area->nama_area} — Rp " . number_format($biaya, 0, ',', '.'));
 
             session(['last_trx' => $id]);
-
             return redirect()->route('petugas.struk.show', $id)
                 ->with('success', "Kendaraan {$trx->kendaraan->plat_nomor} selesai. Biaya: Rp " . number_format($biaya, 0, ',', '.'));
         });
+        } catch (\Throwable $e) {
+            if ($cacheKey) {
+                Cache::forget($cacheKey);
+            }
+            throw $e;
+        }
     }
 }

@@ -50,7 +50,6 @@ class RekapController extends Controller
         $rekap = $query->paginate(11)->withQueryString();
 
         if ($request->input('export')) {
-            $exportRows = (clone $query)->get();
             // stream as Excel-compatible (xls) — simple CSV with Excel MIME and BOM
             $filename   = 'rekap_transaksi_' . now()->format('Ymd') . '.xls';
             $headers    = [
@@ -58,24 +57,31 @@ class RekapController extends Controller
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ];
 
-            $callback = function () use ($exportRows) {
+            $callback = function () use ($query) {
                 $f = fopen('php://output', 'w');
                 // UTF-8 BOM so Excel opens UTF-8 characters correctly
                 fwrite($f, "\xEF\xBB\xBF");
                 fputcsv($f, ['ID Transaksi','Tanggal','Plat Nomor','Jenis','Area','Masuk','Keluar','Durasi','Total']);
-                foreach ($exportRows as $t) {
-                    fputcsv($f, [
-                        'TRX-' . str_pad($t->id_parkir, 4, '0', STR_PAD_LEFT),
-                        $t->waktu_masuk?->format('d M Y') ?? '-',
-                        $t->kendaraan->plat_nomor ?? '-',
-                        $t->kendaraan->jenis_kendaraan ? ucfirst($t->kendaraan->jenis_kendaraan) : '-',
-                        $t->area->nama_area ?? '-',
-                        $t->waktu_masuk?->format('Y-m-d H:i:s') ?? '-',
-                        $t->waktu_keluar?->format('Y-m-d H:i:s') ?? '-',
-                        $t->durasiLabel ?? '-',
-                        $t->biaya_total ?? 0,
-                    ]);
-                }
+
+                // stream chunks to avoid memory spikes
+                $query->chunkById(500, function ($rows) use ($f) {
+                    foreach ($rows as $t) {
+                        fputcsv($f, [
+                            'TRX-' . str_pad($t->id_parkir, 4, '0', STR_PAD_LEFT),
+                            $t->waktu_masuk?->format('d M Y') ?? '-',
+                            $t->kendaraan->plat_nomor ?? '-',
+                            $t->kendaraan->jenis_kendaraan ? ucfirst($t->kendaraan->jenis_kendaraan) : '-',
+                            $t->area->nama_area ?? '-',
+                            $t->waktu_masuk?->format('Y-m-d H:i:s') ?? '-',
+                            $t->waktu_keluar?->format('Y-m-d H:i:s') ?? '-',
+                            $t->durasiLabel ?? '-',
+                            $t->biaya_total ?? 0,
+                        ]);
+                    }
+                    if (function_exists('ob_flush')) { @ob_flush(); }
+                    if (function_exists('flush')) { @flush(); }
+                });
+
                 fclose($f);
             };
 

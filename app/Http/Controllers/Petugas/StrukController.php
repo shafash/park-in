@@ -7,19 +7,19 @@ use App\Models\TbTransaksi;
 use App\Models\TbLogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\StatsService;
 
 class StrukController extends Controller
 {
+    private StatsService $statsService;
+
+    public function __construct(StatsService $statsService)
+    {
+        $this->statsService = $statsService;
+    }
     private function stats(): array
     {
-        $userArea = Auth::user()->id_area ?? null;
-
-        return [
-            'masuk'  => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->count(),
-            'keluar' => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
-            'diarea' => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->where('status', 'masuk')->count(),
-            'struk'  => TbTransaksi::when($userArea, fn($q) => $q->where('id_area', $userArea))->whereDate('waktu_masuk', today())->where('status', 'keluar')->count(),
-        ];
+        return $this->statsService->petugasStats(Auth::user()->id_area ?? null);
     }
 
     public function index(Request $request)

@@ -46,9 +46,10 @@
       </div>
     </div>
 
-    <form method="POST" action="{{ route('petugas.transaksi.keluar.store', $trx->id_parkir) }}">
+    <form method="POST" action="{{ route('petugas.transaksi.keluar.store', $trx->id_parkir) }}" id="form-keluar">
       @csrf
-      <button type="submit" class="btn btn-grn" style="width:100%;justify-content:center;padding:13px;font-size:14px"
+      <input type="hidden" name="idempotency_key" id="idemp_key_keluar" value="">
+      <button type="submit" id="btn-keluar" class="btn btn-grn" style="width:100%;justify-content:center;padding:13px;font-size:14px"
         onclick="return confirm('Proses kendaraan keluar sekarang?')">
         Proses Keluar &amp; Hitung Biaya Final
       </button>
@@ -60,3 +61,20 @@
   <a href="{{ route('petugas.transaksi.index') }}" class="btn btn-out">← Kembali ke Transaksi</a>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Disable submit and attach idempotency key for Keluar form
+const formKeluar = document.getElementById('form-keluar');
+if (formKeluar) {
+  formKeluar.addEventListener('submit', function () {
+    const btn = document.getElementById('btn-keluar');
+    const keyEl = document.getElementById('idemp_key_keluar');
+    if (!keyEl.value) {
+      keyEl.value = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('o_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+    }
+    if (btn) { btn.disabled = true; btn.style.opacity = '.6'; btn.textContent = 'Memproses...'; }
+  });
+}
+</script>
+@endpush
