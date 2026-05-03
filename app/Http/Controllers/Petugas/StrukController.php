@@ -85,7 +85,7 @@ class StrukController extends Controller
             return back()->with('error', 'Anda tidak berwenang mencetak struk di area ini.');
         }
 
-        TbLogAktivitas::catat(Auth::id(), "Mencetak struk transaksi TRX-{$id}");
+        TbLogAktivitas::catat(Auth::id(), "Mencetak struk transaksi " . $trx->tid);
 
         return view('petugas.struk_print', compact('trx'));
     }

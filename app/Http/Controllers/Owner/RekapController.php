@@ -67,7 +67,7 @@ class RekapController extends Controller
                 $query->chunkById(500, function ($rows) use ($f) {
                     foreach ($rows as $t) {
                         fputcsv($f, [
-                            'TRX-' . str_pad($t->id_parkir, 4, '0', STR_PAD_LEFT),
+                            $t->tid,
                             $t->waktu_masuk?->format('d M Y') ?? '-',
                             $t->kendaraan->plat_nomor ?? '-',
                             $t->kendaraan->jenis_kendaraan ? ucfirst($t->kendaraan->jenis_kendaraan) : '-',

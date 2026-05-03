@@ -261,7 +261,7 @@
         @endphp
         <tr>
             <td class="t-gray" style="font-size:11px">
-                TRX-{{ str_pad($t->id_parkir, 4, '0', STR_PAD_LEFT) }}
+                {{ $t->tid }}
             </td>
             <td style="font-size:11px">{{ $t->waktu_masuk->format('d M Y') }}</td>
             <td class="fw7">{{ $t->kendaraan->plat_nomor ?? '—' }}</td>

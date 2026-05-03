@@ -46,7 +46,10 @@ class TbTransaksi extends Model
 
     public function getTidAttribute(): string
     {
-        return 'TRX-' . str_pad($this->id_parkir, 2, '0', STR_PAD_LEFT);
+        // Standardized format: TRX-{YYYYMMDD}-{6-digit-id}
+        $date = $this->waktu_masuk ? $this->waktu_masuk->format('Ymd') : now()->format('Ymd');
+        $idPad = str_pad($this->id_parkir, 6, '0', STR_PAD_LEFT);
+        return "TRX-{$date}-{$idPad}";
     }
 
     public function getBiayaRupiahAttribute(): string
