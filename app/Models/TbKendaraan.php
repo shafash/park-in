@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class TbKendaraan extends Model
 {
@@ -32,8 +33,15 @@ class TbKendaraan extends Model
 
     public function getFotoUrlAttribute(): string
     {
-        if ($this->foto && file_exists(public_path('uploads/kendaraan/' . $this->foto))) {
-            return asset('uploads/kendaraan/' . $this->foto);
+        if ($this->foto) {
+            $cacheKey = 'kendaraan:foto_exists:' . $this->foto;
+            $exists = Cache::remember($cacheKey, now()->addHours(6), function () {
+                return file_exists(public_path('uploads/kendaraan/' . $this->foto));
+            });
+
+            if ($exists) {
+                return asset('uploads/kendaraan/' . $this->foto);
+            }
         }
         // Default placeholder by jenis
         return match($this->jenis_kendaraan) {

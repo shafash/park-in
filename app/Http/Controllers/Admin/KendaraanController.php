@@ -11,6 +11,7 @@ use App\Models\TbLogAktivitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Services\StatsService;
 
 class KendaraanController extends Controller
@@ -94,6 +95,8 @@ class KendaraanController extends Controller
                 $request->file('foto')->move(public_path('uploads/kendaraan'), $fotoName);
                 $kendaraan->foto = $fotoName;
                 $kendaraan->save();
+                // set cache so accessor won't hit filesystem for a while
+                Cache::put('kendaraan:foto_exists:' . $fotoName, true, now()->addHours(6));
             }
 
             TbLogAktivitas::catat(Auth::id(), "Menambah kendaraan: " . ($kendaraan->plat_nomor ?: '—') . " ({$request->jenis_kendaraan})");
@@ -103,6 +106,7 @@ class KendaraanController extends Controller
             DB::rollBack();
             if (!empty($fotoName) && file_exists(public_path('uploads/kendaraan/' . $fotoName))) {
                 @unlink(public_path('uploads/kendaraan/' . $fotoName));
+                Cache::forget('kendaraan:foto_exists:' . $fotoName);
             }
             // Report the exception for monitoring and debugging
             report($e);
@@ -123,12 +127,20 @@ class KendaraanController extends Controller
         $fotoName = $kendaraan->foto;
 
         if ($request->input('hapus_foto') == '1') {
-            if ($fotoName && file_exists(public_path('uploads/kendaraan/' . $fotoName))) unlink(public_path('uploads/kendaraan/' . $fotoName));
+            if ($fotoName && file_exists(public_path('uploads/kendaraan/' . $fotoName))) {
+                unlink(public_path('uploads/kendaraan/' . $fotoName));
+                Cache::forget('kendaraan:foto_exists:' . $fotoName);
+            }
             $fotoName = '';
         } elseif ($request->hasFile('foto') && $request->file('foto')->isValid()) {
-            if ($fotoName && file_exists(public_path('uploads/kendaraan/' . $fotoName))) unlink(public_path('uploads/kendaraan/' . $fotoName));
+            if ($fotoName && file_exists(public_path('uploads/kendaraan/' . $fotoName))) {
+                unlink(public_path('uploads/kendaraan/' . $fotoName));
+                Cache::forget('kendaraan:foto_exists:' . $fotoName);
+            }
             $fotoName = time() . '_' . preg_replace('/[^a-z0-9]/', '_', strtolower($request->plat_nomor)) . '.' . $request->file('foto')->extension();
             $request->file('foto')->move(public_path('uploads/kendaraan'), $fotoName);
+            // cache new foto existence
+            Cache::put('kendaraan:foto_exists:' . $fotoName, true, now()->addHours(6));
         }
 
         // Handle plat logic: if jenis sepeda and plat not provided, generate code; otherwise validate uniqueness
@@ -169,7 +181,10 @@ class KendaraanController extends Controller
     {
         $kendaraan = TbKendaraan::findOrFail($id);
         if ($kendaraan->transaksis()->exists()) return back()->with('error', 'Kendaraan tidak bisa dihapus, ada riwayat transaksi.');
-        if ($kendaraan->foto && file_exists(public_path('uploads/kendaraan/' . $kendaraan->foto))) unlink(public_path('uploads/kendaraan/' . $kendaraan->foto));
+        if ($kendaraan->foto && file_exists(public_path('uploads/kendaraan/' . $kendaraan->foto))) {
+            unlink(public_path('uploads/kendaraan/' . $kendaraan->foto));
+            Cache::forget('kendaraan:foto_exists:' . $kendaraan->foto);
+        }
         $plat = $kendaraan->plat_nomor;
         $kendaraan->delete();
         TbLogAktivitas::catat(Auth::id(), "Menghapus kendaraan: $plat");
