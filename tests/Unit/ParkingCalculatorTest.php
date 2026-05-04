@@ -2,49 +2,38 @@
 
 namespace Tests\Unit;
 
-use App\Services\ParkingCalculator;
-use Carbon\Carbon;
 use PHPUnit\Framework\TestCase;
+use App\Services\ParkingCalculator;
 
 class ParkingCalculatorTest extends TestCase
 {
-    public function test_menghitung_tarif_lintas_hari_tanpa_denda(): void
+    public function test_calculate_fee_within_first_hour_and_grace_period()
     {
-        $masuk = Carbon::parse('2026-04-29 22:30:00');
-        $keluar = Carbon::parse('2026-04-30 02:10:00');
-
-        $durasiMenit = $masuk->diffInMinutes($keluar); // 220 menit -> 4 jam (ceil)
-
-        $total = ParkingCalculator::calculateFromMinutes(
-            durationMinutes: $durasiMenit,
-            basePrice: 2000,
-            hourlyRate: 3000,
-            maxHours: 8,
-            penaltyRate: 5000
-        );
-
-        // 4 jam = 2000 + (3 x 3000) = 11000
-        $this->assertSame(11000, $total);
+        // duration = 70 mins, base = 5000, hour = 3000, grace = 15
+        $fee = ParkingCalculator::calculateFromMinutes(70, 5000, 3000, 8, 10000, 15);
+        
+        // 70 <= (60 + 15), so it should only charge base price
+        $this->assertEquals(5000, $fee);
     }
 
-    public function test_menghitung_tarif_nginap_kena_denda_setelah_batas_jam(): void
+    public function test_calculate_fee_after_grace_period()
     {
-        $masuk = Carbon::parse('2026-04-29 20:15:00');
-        $keluar = Carbon::parse('2026-04-30 07:05:00');
+        // duration = 76 mins, base = 5000, hour = 3000, grace = 15
+        $fee = ParkingCalculator::calculateFromMinutes(76, 5000, 3000, 8, 10000, 15);
+        
+        // 76 > 75, billable = 61 mins. ceil(61/60) = 2 hours.
+        // Cost: base (5000) + 1 extra hour (3000) = 8000
+        $this->assertEquals(8000, $fee);
+    }
 
-        $durasiMenit = $masuk->diffInMinutes($keluar); // 650 menit -> 11 jam (ceil)
-
-        $total = ParkingCalculator::calculateFromMinutes(
-            durationMinutes: $durasiMenit,
-            basePrice: 2000,
-            hourlyRate: 3000,
-            maxHours: 8,
-            penaltyRate: 5000
-        );
-
-        // Normal 8 jam: 2000 + (7 x 3000) = 23000
-        // Penalti 3 jam: 3 x 5000 = 15000
-        // Total: 38000
-        $this->assertSame(38000, $total);
+    public function test_calculate_fee_with_penalty_hours()
+    {
+        // duration = 10 hours (600 mins), base = 5000, hour = 3000, maxHours = 8, penalty = 10000
+        $fee = ParkingCalculator::calculateFromMinutes(600, 5000, 3000, 8, 10000, 15);
+        
+        // Normal 8 hours = 5000 + (7 * 3000) = 26000
+        // Penalty 2 hours = 2 * 10000 = 20000
+        // Total = 46000
+        $this->assertEquals(46000, $fee);
     }
 }

@@ -4,35 +4,34 @@ namespace App\Http\Controllers\Petugas;
 
 use App\Http\Controllers\Controller;
 use App\Models\TbTransaksi;
-use App\Services\ParkingCalculator;
 use App\Models\TbKendaraan;
 use App\Models\TbAreaParkir;
 use App\Models\TbTarif;
-use App\Models\TbLogAktivitas;
+use App\Services\ParkingCalculator;
+use App\Services\ParkingTransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use App\Services\StatsService;
 
 class TransaksiController extends Controller
 {
     private StatsService $statsService;
+    private ParkingTransactionService $transactionService;
 
-    public function __construct(StatsService $statsService)
+    public function __construct(StatsService $statsService, ParkingTransactionService $transactionService)
     {
         $this->statsService = $statsService;
+        $this->transactionService = $transactionService;
     }
+
     private function stats(): array
     {
-        // kept for backward compatibility but delegate to service
         return $this->statsService->petugasStats(Auth::user()->id_area ?? null);
     }
 
     /**
      * AJAX: cari kendaraan berdasarkan plat nomor
-     * Dipanggil saat petugas ketik plat di form masuk
      */
     public function cariPlat(Request $request)
     {
@@ -42,11 +41,12 @@ class TransaksiController extends Controller
             return response()->json([]);
         }
 
-        $results = \App\Models\TbKendaraan::where('plat_nomor', 'like', "%{$q}%")
+        // OPTIMIZED QUERY: prefix search instead of wildcard
+        $results = TbKendaraan::where('plat_nomor', 'like', "{$q}%")
             ->limit(8)
             ->get(['id_kendaraan', 'plat_nomor', 'jenis_kendaraan', 'merek', 'warna', 'pemilik', 'foto'])
             ->map(function ($k) {
-                $tarifId = \App\Models\TbTarif::where('jenis_kendaraan', $k->jenis_kendaraan)->value('id_tarif');
+                $tarifId = TbTarif::where('jenis_kendaraan', $k->jenis_kendaraan)->value('id_tarif');
 
                 return [
                     'id_kendaraan'    => $k->id_kendaraan,
@@ -75,7 +75,7 @@ class TransaksiController extends Controller
         $userArea = Auth::user()->id_area ?? null;
 
         $query = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
-            ->when($q,      fn($q2) => $q2->whereHas('kendaraan', fn($k) => $k->where('plat_nomor', 'like', "%{$q}%")))
+            ->when($q,      fn($q2) => $q2->whereHas('kendaraan', fn($k) => $k->where('plat_nomor', 'like', "{$q}%")))
             ->when($status, fn($q2) => $q2->where('status', $status))
             ->when($jenis,  fn($q2) => $q2->whereHas('kendaraan', fn($k) => $k->where('jenis_kendaraan', $jenis)))
             ->when($userArea, fn($q2) => $q2->where('id_area', $userArea))
@@ -83,13 +83,11 @@ class TransaksiController extends Controller
 
         $transaksis = $query->paginate(9)->withQueryString();
 
-        // Build dynamic list of jenis kendaraan from DB (prefer tariffs, fallback to kendaraan)
         $jenisList = TbTarif::orderBy('jenis_kendaraan')->pluck('jenis_kendaraan')->filter()->unique()->values()->all();
         if (empty($jenisList)) {
             $jenisList = TbKendaraan::distinct()->orderBy('jenis_kendaraan')->pluck('jenis_kendaraan')->filter()->unique()->values()->all();
         }
 
-        // Assign rotating color classes to each jenis so they don't all look the same
         $colorPool = ['p-grn', 'p-blu', 'p-ora'];
         $jenisColors = [];
         foreach ($jenisList as $i => $j) {
@@ -104,12 +102,9 @@ class TransaksiController extends Controller
         $areas  = TbAreaParkir::where('status', 1)->whereRaw('terisi < kapasitas')->orderBy('nama_area')->get();
         $tarifs = TbTarif::orderBy('jenis_kendaraan')->get();
         $allAreas = TbAreaParkir::orderBy('nama_area')->get();
-
-        // Jika petugas/admin punya area tetap, kirimkan juga sebagai `area`
         $area = Auth::user()->area ?? null;
-
-        // Live feed: aktivitas hari ini (masuk/keluar) — batasi ke area user jika ditetapkan
         $userArea = Auth::user()->id_area ?? null;
+
         $liveFeed = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
             ->when($userArea, fn($q) => $q->where('id_area', $userArea))
             ->where(function($q) {
@@ -132,78 +127,25 @@ class TransaksiController extends Controller
         ]);
 
         $plat = strtoupper($request->plat_nomor);
-        // Jika user punya area yang ditetapkan, pastikan tidak boleh pilih area lain
         if (Auth::user()->id_area && Auth::user()->id_area != $request->id_area) {
             return back()->with('error', 'Anda tidak berwenang mengakses area tersebut.')->withInput();
         }
 
-        // Optional idempotency key: prevents double-submit from client
         $ikey = $request->input('idempotency_key');
         $cacheKey = $ikey ? "idempotency:masuk:{$ikey}" : null;
 
-        if ($cacheKey) {
-            // Try to reserve this idempotency key for a short time (5 minutes)
-            if (!Cache::add($cacheKey, true, now()->addMinutes(5))) {
-                return back()->with('error', 'Permintaan sedang diproses atau sudah diproses.')->withInput();
-            }
+        if ($cacheKey && !Cache::add($cacheKey, true, now()->addMinutes(5))) {
+            return back()->with('error', 'Permintaan sedang diproses atau sudah diproses.')->withInput();
         }
 
         try {
-            return DB::transaction(function () use ($request, $plat, $cacheKey) {
-            $area = TbAreaParkir::where('id_area', $request->id_area)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($area->terisi >= $area->kapasitas) {
-                return back()->with('error', "Area {$area->nama_area} sudah penuh!")->withInput();
-            }
-
-            $kendaraan = TbKendaraan::where('plat_nomor', $plat)->lockForUpdate()->first();
-            if (!$kendaraan) {
-                $tarif = TbTarif::find($request->id_tarif);
-                $kendaraan = TbKendaraan::create([
-                    'plat_nomor'      => $plat,
-                    'jenis_kendaraan' => $tarif->jenis_kendaraan ?? 'lainnya',
-                    'warna'           => '',
-                    'pemilik'         => '',
-                    'created_at'      => now(),
-                ]);
-
-                $kendaraan = TbKendaraan::where('id_kendaraan', $kendaraan->id_kendaraan)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-            }
-
-            $aktif = TbTransaksi::where('id_kendaraan', $kendaraan->id_kendaraan)
-                ->where('status', 'masuk')
-                ->lockForUpdate()
-                ->first();
-
-            // Idempotency dasar: request ulang untuk kendaraan yang sama tidak membuat transaksi ganda.
-            if ($aktif) {
-                return back()->with('error', "Kendaraan $plat masih aktif parkir.")->withInput();
-            }
-
-            TbTransaksi::create([
-                'id_kendaraan' => $kendaraan->id_kendaraan,
-                'waktu_masuk'  => now(),
-                'id_tarif'     => $request->id_tarif,
-                'status'       => 'masuk',
-                'id_user'      => Auth::id(),
-                'id_area'      => $request->id_area,
-            ]);
-
-            $area->increment('terisi');
-            TbLogAktivitas::catat(Auth::id(), "Kendaraan masuk: $plat ke {$area->nama_area}");
-
-            // Keep idempotency marker in cache (already reserved). Return success.
-            return back()->with('success', "Kendaraan $plat berhasil dicatat masuk ke {$area->nama_area}.");
-        });
+            $this->transactionService->masuk($plat, $request->id_tarif, $request->id_area, Auth::id());
+            return back()->with('success', "Kendaraan $plat berhasil dicatat masuk.");
+        } catch (\Exception $e) {
+            if ($cacheKey) Cache::forget($cacheKey);
+            return back()->with('error', $e->getMessage())->withInput();
         } catch (\Throwable $e) {
-            // On failure, allow retry by removing reservation
-            if ($cacheKey) {
-                Cache::forget($cacheKey);
-            }
+            if ($cacheKey) Cache::forget($cacheKey);
             throw $e;
         }
     }
@@ -215,100 +157,54 @@ class TransaksiController extends Controller
             ->where('status', 'masuk')
             ->firstOrFail();
 
-        // Batasi operasi keluar ke area milik user ketika ditetapkan
         if (Auth::user()->id_area && $trx->id_area != Auth::user()->id_area) {
             return back()->with('error', 'Anda tidak berwenang melihat transaksi di area ini.');
         }
 
-        $durEst = max(1, (int) ceil((now()->timestamp - $trx->waktu_masuk->timestamp) / 3600));
+        // Estimate using raw minutes for accuracy
+        $durasiMenit = max(1, (int) round((now()->timestamp - $trx->waktu_masuk->timestamp) / 60));
+        
         $basePrice   = $trx->tarif->tarif_awal ?? 0;
         $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
         $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
         $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
 
         $estBiaya = ParkingCalculator::calculateFromMinutes(
-            durationMinutes: $durEst * 60,
-            basePrice: $basePrice,
-            hourlyRate: $hourlyRate,
-            maxHours: $maxHours,
-            penaltyRate: $penaltyRate
+            $durasiMenit,
+            $basePrice,
+            $hourlyRate,
+            $maxHours,
+            $penaltyRate
         );
+
+        // Approximate hours for display only
+        $durEst = (int) ceil(max(0, $durasiMenit - 15) / 60);
+        if ($durEst < 1) $durEst = 1;
 
         return view('petugas.keluar', array_merge($this->stats(), compact('trx', 'durEst', 'estBiaya')));
     }
 
     public function keluarStore(Request $request, $id)
     {
-        // Optional idempotency key: prevents double-submit from client
         $ikey = $request->input('idempotency_key');
         $cacheKey = $ikey ? "idempotency:keluar:{$ikey}" : null;
 
-        if ($cacheKey) {
-            if (!Cache::add($cacheKey, true, now()->addMinutes(5))) {
-                return redirect()->route('petugas.struk.show', $id)
-                    ->with('success', 'Transaksi sedang diproses atau sudah diproses.');
-            }
+        if ($cacheKey && !Cache::add($cacheKey, true, now()->addMinutes(5))) {
+            return redirect()->route('petugas.struk.show', $id)
+                ->with('success', 'Transaksi sedang diproses atau sudah diproses.');
         }
 
         try {
-            return DB::transaction(function () use ($id, $cacheKey) {
-            $trx = TbTransaksi::with(['kendaraan', 'tarif'])
-                ->where('id_parkir', $id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            // Batasi operasi keluar ke area milik user ketika ditetapkan
-            if (Auth::user()->id_area && $trx->id_area != Auth::user()->id_area) {
-                return back()->with('error', 'Anda tidak berwenang memproses transaksi di area ini.');
-            }
-
-            $area = TbAreaParkir::where('id_area', $trx->id_area)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            // Idempotency dasar: request keluar berulang pada transaksi yang sama tidak diproses ulang.
-            if ($trx->status !== 'masuk') {
-                return redirect()->route('petugas.struk.show', $id)
-                    ->with('success', "Transaksi {$trx->kendaraan->plat_nomor} sudah diproses sebelumnya.");
-            }
-
-            $wk  = now();
-            $dur = max(1, (int) ceil(($wk->timestamp - $trx->waktu_masuk->timestamp) / 3600));
-
-            $basePrice   = $trx->tarif->tarif_awal ?? 0;
-            $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
-            $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
-            $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
-
-            $biaya = ParkingCalculator::calculateFromMinutes(
-                durationMinutes: $dur * 60,
-                basePrice: $basePrice,
-                hourlyRate: $hourlyRate,
-                maxHours: $maxHours,
-                penaltyRate: $penaltyRate
-            );
-
-            $trx->update([
-                'waktu_keluar' => $wk,
-                'durasi_jam'   => $dur,
-                'biaya_total'  => $biaya,
-                'status'       => 'keluar',
-            ]);
-
-            if ($area->terisi > 0) {
-                $area->decrement('terisi');
-            }
-
-            TbLogAktivitas::catat(Auth::id(), "Kendaraan keluar: {$trx->kendaraan->plat_nomor} — {$area->nama_area} — Rp " . number_format($biaya, 0, ',', '.'));
-
+            $result = $this->transactionService->keluar($id, Auth::id(), Auth::user()->id_area);
+            
             session(['last_trx' => $id]);
             return redirect()->route('petugas.struk.show', $id)
-                ->with('success', "Kendaraan {$trx->kendaraan->plat_nomor} selesai. Biaya: Rp " . number_format($biaya, 0, ',', '.'));
-        });
+                ->with('success', "Kendaraan {$result['trx']->kendaraan->plat_nomor} selesai. Biaya: Rp " . number_format($result['biaya'], 0, ',', '.'));
+        } catch (\Exception $e) {
+            if ($cacheKey) Cache::forget($cacheKey);
+            return back()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            if ($cacheKey) {
-                Cache::forget($cacheKey);
-            }
+            if ($cacheKey) Cache::forget($cacheKey);
             throw $e;
         }
     }

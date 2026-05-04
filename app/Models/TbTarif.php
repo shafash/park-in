@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TbTarif extends Model
 {
+    use SoftDeletes;
+
     protected $table      = 'tb_tarif';
     protected $primaryKey = 'id_tarif';
     public    $timestamps = false;
