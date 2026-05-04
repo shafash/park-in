@@ -63,17 +63,21 @@ class KendaraanController extends Controller
 
         DB::beginTransaction();
         try {
-            $jenis = $request->jenis_kendaraan;
-            $plat = trim((string) $request->plat_nomor);
+                $jenis = $request->jenis_kendaraan;
+                $platRaw = trim((string) $request->plat_nomor);
+                $plat = ''; // Ensure $plat is defined
             if (strtolower($jenis) === 'sepeda') {
-                if ($plat === '') {
+                if ($platRaw === '') {
                     do {
                         $code = 'SPD-' . strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4));
                     } while (TbKendaraan::where('plat_nomor', $code)->exists());
-                    $plat = $code;
+                    // normalize generated code as well
+                        $plat = $code; // Assign the generated code directly
+                } else {
+                    $plat = preg_replace('/[^A-Z0-9]/', '', strtoupper($platRaw));
                 }
             } else {
-                $plat = strtoupper($plat);
+                $plat = preg_replace('/[^A-Z0-9]/', '', strtoupper($platRaw));
             }
 
             // if still blank (shouldn't happen), set to null
@@ -91,7 +95,8 @@ class KendaraanController extends Controller
 
             $fotoName = '';
             if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
-                $fotoName = time() . '_' . preg_replace('/[^a-z0-9]/', '_', strtolower($request->plat_nomor)) . '.' . $request->file('foto')->extension();
+                    $fotoBase = $plat ?? preg_replace('/[^A-Z0-9]/', '', strtoupper($platRaw));
+                    $fotoName = time() . '_' . preg_replace('/[^a-z0-9]/', '_', strtolower($fotoBase)) . '.' . $request->file('foto')->extension();
                 $request->file('foto')->move(public_path('uploads/kendaraan'), $fotoName);
                 $kendaraan->foto = $fotoName;
                 $kendaraan->save();
@@ -126,6 +131,21 @@ class KendaraanController extends Controller
 
         $fotoName = $kendaraan->foto;
 
+        // Normalize plate input early so foto naming and uniqueness checks use same value
+        $platRaw = trim((string) $request->plat_nomor);
+        $jenis = $request->jenis_kendaraan;
+        if (strtolower($jenis) === 'sepeda') {
+            $plat = trim((string) $request->plat_nomor);
+            if ($plat === '') {
+                do {
+                    $code = 'SPD-' . strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4));
+                } while (TbKendaraan::where('plat_nomor', $code)->exists());
+                $plat = $code;
+            }
+        } else {
+            $plat = preg_replace('/[^A-Z0-9]/', '', strtoupper($platRaw));
+        }
+
         if ($request->input('hapus_foto') == '1') {
             if ($fotoName && file_exists(public_path('uploads/kendaraan/' . $fotoName))) {
                 unlink(public_path('uploads/kendaraan/' . $fotoName));
@@ -137,27 +157,12 @@ class KendaraanController extends Controller
                 unlink(public_path('uploads/kendaraan/' . $fotoName));
                 Cache::forget('kendaraan:foto_exists:' . $fotoName);
             }
-            $fotoName = time() . '_' . preg_replace('/[^a-z0-9]/', '_', strtolower($request->plat_nomor)) . '.' . $request->file('foto')->extension();
+                $fotoBase = $plat ?: preg_replace('/[^A-Z0-9]/', '', strtoupper($platRaw));
+                $fotoName = time() . '_' . preg_replace('/[^a-z0-9]/', '_', strtolower($fotoBase)) . '.' . $request->file('foto')->extension();
             $request->file('foto')->move(public_path('uploads/kendaraan'), $fotoName);
             // cache new foto existence
             Cache::put('kendaraan:foto_exists:' . $fotoName, true, now()->addHours(6));
         }
-
-        // Handle plat logic: if jenis sepeda and plat not provided, generate code; otherwise validate uniqueness
-        $jenis = $request->jenis_kendaraan;
-        $plat = trim((string) $request->plat_nomor);
-        if (strtolower($jenis) === 'sepeda') {
-            if ($plat === '') {
-                // generate a new unique SPD code
-                do {
-                    $code = 'SPD-' . strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4));
-                } while (TbKendaraan::where('plat_nomor', $code)->exists());
-                $plat = $code;
-            }
-        } else {
-            $plat = strtoupper($plat);
-        }
-
         // If plat provided, ensure uniqueness (exclude current)
         if ($plat) {
             $exists = TbKendaraan::where('plat_nomor', $plat)->where('id_kendaraan', '!=', $id)->exists();
@@ -173,7 +178,7 @@ class KendaraanController extends Controller
             'foto'            => $fotoName,
         ]);
 
-        TbLogAktivitas::catat(Auth::id(), "Mengubah kendaraan id={$id}: " . strtoupper($request->plat_nomor));
+        TbLogAktivitas::catat(Auth::id(), "Mengubah kendaraan id={$id}: " . ($plat ?: '—'));
         return back()->with('success', 'Kendaraan berhasil diperbarui.');
     }
 

@@ -34,17 +34,25 @@ class ParkingCalculator
         }
 
         // Deduct grace period for next hour calculation
-        $billableMinutes = $durationMinutes - $gracePeriod;
+        $billableMinutes = max(0, $durationMinutes - $gracePeriod);
 
-        // Apply ceiling ONLY here internally
+        // Apply ceiling only once to convert billable minutes to billable hours
         $hours = (int) ceil($billableMinutes / 60);
 
-        // Calculate normal cost
+        // If maxHours <= 0 then unlimited: all hours are normal, no penalty
+        if ($maxHours <= 0) {
+            $normalHours = max(1, $hours);
+            $normalExtraHours = max(0, $normalHours - 1);
+            $normalCost = $basePrice + ($normalExtraHours * $hourlyRate);
+            return $normalCost;
+        }
+
+        // Calculate normal cost (cap normal hours to maxHours)
         $normalHours = max(1, min($hours, max(1, $maxHours)));
         $normalExtraHours = max(0, $normalHours - 1);
         $normalCost = $basePrice + ($normalExtraHours * $hourlyRate);
 
-        // Calculate penalty cost
+        // Calculate penalty cost for hours beyond maxHours
         $penaltyHours = $hours > $maxHours ? ($hours - $maxHours) : 0;
         $penaltyCost  = $penaltyHours * $penaltyRate;
 

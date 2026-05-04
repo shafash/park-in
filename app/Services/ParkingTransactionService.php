@@ -63,14 +63,53 @@ class ParkingTransactionService
     }
 
     /**
+     * Estimasi biaya keluar untuk tampilan (memindahkan logika dari controller)
+     * Menggunakan floor untuk menghitung durasi menit.
+     */
+    public function estimasiKeluar(int $id_parkir)
+    {
+        $trx = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
+            ->where('id_parkir', $id_parkir)
+            ->where('status', 'masuk')
+            ->firstOrFail();
+
+        $waktu_now = now();
+        $durasiMenit = max(1, (int) floor(($waktu_now->timestamp - $trx->waktu_masuk->timestamp) / 60));
+
+        $basePrice   = $trx->tarif->tarif_awal ?? 0;
+        $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
+        $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
+        $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
+
+        $estBiaya = ParkingCalculator::calculateFromMinutes(
+            $durasiMenit,
+            $basePrice,
+            $hourlyRate,
+            $maxHours,
+            $penaltyRate
+        );
+
+        $durEst = (int) ceil(max(0, $durasiMenit - 15) / 60);
+        if ($durEst < 1) $durEst = 1;
+
+        return [
+            'trx' => $trx,
+            'durasiMenit' => $durasiMenit,
+            'estBiaya' => $estBiaya,
+            'durasiJam' => $durEst,
+        ];
+    }
+
+    /**
      * Memproses kendaraan keluar dari area parkir.
      */
     public function keluar(int $id_parkir, int $id_user, ?int $user_area = null)
     {
         return DB::transaction(function () use ($id_parkir, $id_user, $user_area) {
+            // Fetch transaction first (no lock) then acquire locks in consistent order:
+            // 1. TbAreaParkir, 2. TbKendaraan (if needed), 3. TbTransaksi
             $trx = TbTransaksi::with(['kendaraan', 'tarif'])
                 ->where('id_parkir', $id_parkir)
-                ->lockForUpdate()
                 ->firstOrFail();
 
             if ($user_area && $trx->id_area != $user_area) {
@@ -81,13 +120,26 @@ class ParkingTransactionService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // Lock kendaraan next (if exists)
+            $kendaraan = null;
+            if ($trx->id_kendaraan) {
+                $kendaraan = TbKendaraan::where('id_kendaraan', $trx->id_kendaraan)
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            // Finally lock the transaksi row
+            $trx = TbTransaksi::where('id_parkir', $id_parkir)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if ($trx->status !== 'masuk') {
                 throw new \Exception("Transaksi {$trx->kendaraan->plat_nomor} sudah diproses sebelumnya.");
             }
 
             $waktu_keluar = now();
-            // Kalkulasi selisih dalam murni MENIT
-            $durasiMenit = max(1, (int) round(($waktu_keluar->timestamp - $trx->waktu_masuk->timestamp) / 60));
+            // Kalkulasi selisih dalam murni MENIT menggunakan FLOOR per audit
+            $durasiMenit = max(1, (int) floor(($waktu_keluar->timestamp - $trx->waktu_masuk->timestamp) / 60));
 
             $basePrice   = $trx->tarif->tarif_awal ?? 0;
             $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;

@@ -35,7 +35,7 @@ class TransaksiController extends Controller
      */
     public function cariPlat(Request $request)
     {
-        $q = strtoupper(trim($request->input('q', '')));
+        $q = preg_replace('/[^A-Z0-9]/', '', strtoupper(trim($request->input('q', ''))));
 
         if (strlen($q) < 2) {
             return response()->json([]);
@@ -126,7 +126,7 @@ class TransaksiController extends Controller
             'id_area'    => 'required|exists:tb_area_parkir,id_area',
         ]);
 
-        $plat = strtoupper($request->plat_nomor);
+        $plat = preg_replace('/[^A-Z0-9]/', '', strtoupper($request->plat_nomor));
         if (Auth::user()->id_area && Auth::user()->id_area != $request->id_area) {
             return back()->with('error', 'Anda tidak berwenang mengakses area tersebut.')->withInput();
         }
@@ -152,36 +152,14 @@ class TransaksiController extends Controller
 
     public function keluarForm($id)
     {
-        $trx = TbTransaksi::with(['kendaraan', 'tarif', 'area'])
-            ->where('id_parkir', $id)
-            ->where('status', 'masuk')
-            ->firstOrFail();
+        $est = $this->transactionService->estimasiKeluar($id);
+        $trx = $est['trx'];
 
         if (Auth::user()->id_area && $trx->id_area != Auth::user()->id_area) {
             return back()->with('error', 'Anda tidak berwenang melihat transaksi di area ini.');
         }
 
-        // Estimate using raw minutes for accuracy
-        $durasiMenit = max(1, (int) round((now()->timestamp - $trx->waktu_masuk->timestamp) / 60));
-        
-        $basePrice   = $trx->tarif->tarif_awal ?? 0;
-        $hourlyRate  = $trx->tarif->tarif_per_jam ?? 0;
-        $maxHours    = $trx->tarif->batas_durasi_jam ?? 0;
-        $penaltyRate = $trx->tarif->denda_per_jam ?? 0;
-
-        $estBiaya = ParkingCalculator::calculateFromMinutes(
-            $durasiMenit,
-            $basePrice,
-            $hourlyRate,
-            $maxHours,
-            $penaltyRate
-        );
-
-        // Approximate hours for display only
-        $durEst = (int) ceil(max(0, $durasiMenit - 15) / 60);
-        if ($durEst < 1) $durEst = 1;
-
-        return view('petugas.keluar', array_merge($this->stats(), compact('trx', 'durEst', 'estBiaya')));
+        return view('petugas.keluar', array_merge($this->stats(), ['trx' => $trx, 'durEst' => $est['durasiJam'], 'estBiaya' => $est['estBiaya']]));
     }
 
     public function keluarStore(Request $request, $id)
